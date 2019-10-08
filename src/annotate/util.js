@@ -30,9 +30,9 @@ export function getAnnotationColor (annotation) {
 }
 
 /**
- * 
- * @param {import(".").Annotation} annotation 
- * @param {ArrayBuffer} buffer 
+ *
+ * @param {import(".").Annotation} annotation
+ * @param {ArrayBuffer} buffer
  * @returns {string|number|ArrayBuffer}
  */
 export function getAnnotationData (annotation, buffer) {
@@ -43,6 +43,7 @@ export function getAnnotationData (annotation, buffer) {
             data = [...Array(annotation.length)].map((_, i) => String.fromCharCode(view.getUint8(annotation.start + i))).join("");
             break;
         case "Uint8":
+        default:
             data = view.getUint8(annotation.start);
             break;
         case "Int8":

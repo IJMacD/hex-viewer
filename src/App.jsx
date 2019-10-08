@@ -15,7 +15,7 @@ export default class App extends React.Component {
             error: null,
         }
     }
-        
+
     /** @this {HTMLInputElement} */
     handleChange (e) {
         const files = e.target.files;
@@ -50,18 +50,18 @@ export default class App extends React.Component {
         }
 
         return (
-            <div>      
+            <div>
                 <input type="file" id="file-input" onChange={this.handleChange.bind(this)} />
                 <div style={{ display: "flex" }}>
-                    <div style={{ flex: 1}}>
+                    <div style={{ flex: 1, margin: 8 }}>
                         <h1>Hex</h1>
                         <HexView buffer={buffer} annotations={annotations} />
                     </div>
-                    <div style={{ flex: 1}}>
+                    <div style={{ flex: 1, margin: 8 }}>
                         <h1>Annotations</h1>
                         <Annotations buffer={buffer} annotations={annotations} />
                     </div>
-                    <div style={{ flex: 1}}>
+                    <div style={{ flex: 1, margin: 8 }}>
                         <h1>Preview</h1>
                         {output}
                     </div>

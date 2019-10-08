@@ -4,14 +4,14 @@ import { getAnnotationData } from './annotate/util';
 import { opacity } from './util';
 
 /**
- * 
- * @param {{ buffer: ArrayBuffer, annotations: object[] }} props 
+ *
+ * @param {{ buffer: ArrayBuffer, annotations: object[] }} props
  */
 export default function Annotations ({ buffer, annotations }) {
     if (!buffer || !annotations) {
         return null;
     }
-    
+
     return (
         <ul className="Annotations">
             {
@@ -26,6 +26,8 @@ export default function Annotations ({ buffer, annotations }) {
                             out.push(view.getUint8(i).toString(2).padStart(8,"0"));
                         }
                         data = `0b${out.join("")}`;
+                    } else if (data instanceof ArrayBuffer) {
+                        data = void 0;
                     }
                     return (
                         <li key={i} style={{ borderColor: a.color, backgroundColor: opacity(a.color, 0.5) }}>
