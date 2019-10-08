@@ -1,99 +1,71 @@
 import React from 'react';
+import BMP from './output/BMP';
+import HexView from './HexView';
+import Annotations from './Annotations';
+import { findFormat } from './annotate';
 
 export default class App extends React.Component {
     constructor (props) {
         super(props);
 
         this.state = {
-            output: [],
+            buffer: null,
+            format: null,
+            annotations: null,
+            error: null,
         }
     }
         
     /** @this {HTMLInputElement} */
     handleChange (e) {
         const files = e.target.files;
-        const out = [];
 
         if (files.length) {
             const reader = new FileReader();
             reader.addEventListener("load", e => {
                 if (typeof e.target.result === "string") return;
 
-                const data = new DataView(e.target.result);
+                const buffer = e.target.result;
+                let { format, annotations } = findFormat(buffer) || { format: null, annotations: [] };
 
-                if (data.getUint8(0) === 0x42 && data.getUint8(1) === 0x4D) {
-                    out.push("We have a BMP image");
-
-                    const length = data.getUint16(2, true);
-                    const data_start = data.getUint32(0x0A, true);
-                    const header_length = data.getUint32(0x0E, true);
-                    const width = data.getUint32(0x12, true);
-                    const height = data.getUint32(0x16, true);
-                    const color_planes = data.getUint16(0x1A, true);
-                    const bits_per_pixel = data.getUint16(0x1C, true);
-                    const compression = data.getUint32(0x1E, true);
-
-                    out.push(`length: ${length}`);
-                    out.push(`data_start: ${data_start}`);
-                    out.push(`header_length: ${header_length}`);
-                    out.push(`width: ${width}`);
-                    out.push(`height: ${height}`);
-                    out.push(`color_planes: ${color_planes}`);
-                    out.push(`bits_per_pixel: ${bits_per_pixel}`);
-                    out.push(`compression: ${compression}`);
-
-                    this.drawImage(new DataView(e.target.result, data_start), width, height);
-                } else {
-                    out.push("Unknown file");
-                }
-
-                this.setState({ output: out });
+                this.setState({ buffer, format, annotations });
             });
             reader.readAsArrayBuffer(files[0]);
         }
     }
 
-    /**
-     * @param {DataView} pixelData
-     * @param {number} width
-     * @param {number} height
-     */
-    drawImage (pixelData, width, height) {
-        if (!this.canvas) {
-            return;
-        }
-
-        const ctx = this.canvas.getContext("2d");
-        const line = ctx.createImageData(width, 1);
-
-        this.canvas.width = width;
-        this.canvas.height = height;
-
-        const padding = 4 - (3 * width) %4;
-
-        for (let y = 0; y < height; y++) {
-            for (let x = 0; x < width; x++) {
-                const offset = (y * height + x) * 3;
-                const b = pixelData.getUint8(padding * y + offset);
-                const g = pixelData.getUint8(padding * y + offset+1);
-                const r = pixelData.getUint8(padding * y + offset+2);
-
-                line.data[x*4    ] = r;
-                line.data[x*4 + 1] = g;
-                line.data[x*4 + 2] = b;
-                line.data[x*4 + 3] = 255;
-            }
-
-            ctx.putImageData(line, 0, height - y - 1);
-        }
+    componentDidCatch (error) {
+        this.setState({ error });
     }
 
     render () {
+        const { buffer, annotations } = this.state;
+        let output;
+
+        if (this.state.error) {
+            output = <p>Error: { this.state.error.message }</p>;
+        }
+        else if (this.state.format === "BMP") {
+            output = <BMP buffer={buffer} />;
+        }
+
         return (
             <div>      
                 <input type="file" id="file-input" onChange={this.handleChange.bind(this)} />
-                <div><pre id="output">{this.state.output.join("\n")}</pre></div>
-                <canvas id="canvas" ref={ref => this.canvas = ref}></canvas>
+                <div style={{ display: "flex" }}>
+                    <div style={{ flex: 1}}>
+                        <h1>Hex</h1>
+                        <HexView buffer={buffer} annotations={annotations} />
+                    </div>
+                    <div style={{ flex: 1}}>
+                        <h1>Annotations</h1>
+                        <Annotations buffer={buffer} annotations={annotations} />
+                    </div>
+                    <div style={{ flex: 1}}>
+                        <h1>Preview</h1>
+                        {output}
+                    </div>
+                </div>
             </div>
         )
     }
