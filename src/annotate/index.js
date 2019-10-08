@@ -1,8 +1,9 @@
 import { getAnnotationLength, getAnnotationColor, getAnnotationData } from "./util";
 
 const formats = {
-    "BMP": require('./bmp'),
-    "GIF": require('./gif'),
+    "BMP": require('./formats/bmp'),
+    "GIF": require('./formats/gif'),
+    "TXT": require('./formats/txt'),
 };
 
 export function findFormat(buffer) {

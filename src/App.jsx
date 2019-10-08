@@ -1,8 +1,9 @@
 import React from 'react';
-import BMP from './output/BMP';
+import BMP from './preview/BMP';
 import HexView from './HexView';
 import Annotations from './Annotations';
 import { findFormat } from './annotate';
+import TXT from './preview/TXT';
 
 export default class App extends React.Component {
     constructor (props) {
@@ -47,6 +48,9 @@ export default class App extends React.Component {
         }
         else if (this.state.format === "BMP") {
             output = <BMP buffer={buffer} />;
+        }
+        else if (this.state.format === "TXT") {
+            output = <TXT buffer={buffer} />;
         }
 
         return (
