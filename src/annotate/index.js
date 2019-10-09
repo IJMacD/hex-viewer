@@ -3,6 +3,7 @@ import { getAnnotationLength, getAnnotationColor, getAnnotationData } from "./ut
 const formats = {
     "BMP": require('./formats/bmp'),
     "GIF": require('./formats/gif'),
+    "PNG": require('./formats/png'),
     "TXT": require('./formats/txt'),
 };
 
@@ -24,6 +25,7 @@ export function findFormat(buffer) {
  * @typedef Annotation
  * @prop {string} [id]
  * @prop {string} type
+ * @prop {string} [label]
  * @prop {number} start
  * @prop {number} length
  * @prop {string} color
@@ -34,12 +36,14 @@ export function findFormat(buffer) {
  * @typedef AnnotationTemplate
  * @prop {string} [id]
  * @prop {string} type
- * @prop {number|object} start
+ * @prop {string} [label]
+ * @prop {number|object} [start]
  * @prop {number|object} [length]
  * @prop {string} [color]
  * @prop {AnnotationTemplate[]} [children]
- * @prop {{ [byte: number]: AnnotationTemplate[] }} [cases]
+ * @prop {{ [value: number|string]: AnnotationTemplate[] }} [cases]
  * @prop {number} [value]
+ * @prop {string} [condition]
  * @prop {AnnotationTemplate[]} [then]
  * @prop {AnnotationTemplate[]} [else]
  */
@@ -70,9 +74,16 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
         /** @type {Annotation} */
         const annotation = { length: 0, color: null, ...template };
 
-        annotation.color = getAnnotationColor(template);
-        annotation.start = (template.start ? resolveReference(template.start, annotations, buffer) : start + groupStart);
-        annotation.length = resolveReference(getAnnotationLength(template), annotations, buffer);
+        annotation.start = (template.start ? +resolveReference(template.start, annotations, buffer, annotation) : start + groupStart);
+        if (!template.length && (template.type === "ASCII" || template.type === "UTF-8")) {
+            const view = new DataView(buffer, annotation.start);
+            let length;
+            for (length = 0; length < view.byteLength && view.getUint8(length) !== 0; length++) { }
+            annotation.length = length;
+        }
+        else {
+            annotation.length = +evaluateExpression(getAnnotationLength(template), annotations, buffer, annotation);
+        }
 
         if (template.type === "repeater") {
             let absoluteStart = start + groupStart;
@@ -90,31 +101,95 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
                 absoluteStart = end;
             }
         } else if (template.type === "switch") {
-            const val = +getAnnotationData(annotation, buffer);
-            const sublist = template.cases[val];
-            if (sublist) {
-                processAnnotationTemplates(sublist, annotations, buffer, annotation.start);
-                const last = annotations[annotations.length - 1];
+            let val = null;
 
-                // Set for next loop
-                start = last.start + last.length;
+            if (template.value) {
+                val = resolveReference(template.value, annotations, buffer);
+            }
+            else {
+                val = +getAnnotationData(annotation, buffer);
+            }
+
+            if (typeof val === "number" || typeof val === "string") {
+                const sublist = template.cases[val] || template.cases['default'];
+                if (sublist) {
+                    processAnnotationTemplates(sublist, annotations, buffer, annotation.start);
+                }
             }
         } else if (template.type === "if") {
-            const val = +getAnnotationData(annotation, buffer);
-            const sublist = val === template.value ? template.then : template.else;
-            if (sublist) {
-                processAnnotationTemplates(sublist, annotations, buffer, annotation.start);
-                const last = annotations[annotations.length - 1];
+            let isTrue = null;
 
-                // Set for next loop
-                start = last.start + last.length;
+            if (template.condition) {
+                isTrue = evaluateExpression(template.condition, annotations, buffer);
+            } else if (template.value) {
+                const val = +getAnnotationData(annotation, buffer);
+                isTrue = val === template.value;
             }
-        } else  if (annotation.length > 0) {
+
+            if (typeof isTrue === "boolean") {
+                const sublist = isTrue ? template.then : template.else;
+                if (sublist) {
+                    processAnnotationTemplates(sublist, annotations, buffer, annotation.start);
+                }
+            }
+        } else if (annotation.length > 0) {
+            annotation.color = getAnnotationColor(template);
             annotations.push(annotation);
-            // Start for next template
-            start += annotation.length;
+        }
+
+        const last = annotations[annotations.length - 1];
+        // Set for next loop
+        start = last.start + last.length - groupStart;
+    }
+}
+
+/**
+ *
+ * @param {number|string|object} expr
+ * @param {Annotation[]} annotations
+ * @param {ArrayBuffer} buffer
+ * @param {Annotation} [self]
+ * @returns {number|string|boolean|ArrayBuffer}
+ */
+function evaluateExpression (expr, annotations, buffer, self=null) {
+    if (typeof expr === "string") {
+        const match = /[+=-]/.exec(expr);
+        if (match) {
+            const [ left, right ] = expr.split(match[0], 2).map(s => s.trim()).map(s => evaluateExpression(s, annotations, buffer, self));
+
+            switch (match[0]) {
+                case "=":
+                    return left === right;
+                case "+":
+                    return +left + +right;
+                case "-":
+                    return +left - +right;
+            }
         }
     }
+
+    return evaluateNode(expr, annotations, buffer, self);
+}
+
+/**
+ *
+ * @param {number|string|object} node
+ * @param {Annotation[]} annotations
+ * @param {ArrayBuffer} buffer
+ * @param {Annotation} [self]
+ * @returns {number|string|ArrayBuffer}
+ */
+function evaluateNode (node, annotations, buffer, self=null) {
+    if (typeof node === "string" && node[0] === "'" && node[node.length-1] === "'") {
+        return node.substring(1,node.length-1);
+    }
+
+    const num = +node;
+    if (!isNaN(num)) {
+        return num;
+    }
+
+    return resolveReference(node, annotations, buffer, self);
 }
 
 /**
@@ -122,19 +197,25 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
  * @param {number|string|object} reference
  * @param {Annotation[]} annotations
  * @param {ArrayBuffer} buffer
- * @returns {number}
+ * @param {Annotation} [self]
+ * @returns {number|string|ArrayBuffer}
  */
-function resolveReference (reference, annotations, buffer) {
+function resolveReference (reference, annotations, buffer, self=null) {
     if (typeof reference === "number") {
         return reference;
     }
 
     if (typeof reference === "string") {
         const id = reference.split(":", 2);
-        const ref = findAnnotation(annotations, id[0]);
+        const ref = id[0] ? findAnnotation(annotations, id[0]) : self;
         const type = id[1] || "value";
+
+        if (!ref) {
+            throw Error("Cannot resolver reference: " + reference);
+        }
+
         if (type === "value")
-            return +getAnnotationData(ref, buffer);
+            return getAnnotationData(ref, buffer);
         if (type === "start")
             return ref.start;
         if (type === "length")
@@ -149,8 +230,8 @@ function resolveReference (reference, annotations, buffer) {
             return +getAnnotationData(ref, buffer) + ref.start;
         }
 
-        const left = resolveReference(reference.left, annotations, buffer);
-        const right = resolveReference(reference.right, annotations, buffer);
+        const left = +resolveReference(reference.left, annotations, buffer);
+        const right = +resolveReference(reference.right, annotations, buffer);
 
         switch (reference.operation) {
             case "add":

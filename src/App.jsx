@@ -1,9 +1,10 @@
 import React from 'react';
-import BMP from './preview/BMP';
 import HexView from './HexView';
 import Annotations from './Annotations';
 import { findFormat } from './annotate';
+import BMP from './preview/BMP';
 import TXT from './preview/TXT';
+import './App.css';
 
 export default class App extends React.Component {
     constructor (props) {
@@ -41,34 +42,35 @@ export default class App extends React.Component {
 
     render () {
         const { buffer, annotations } = this.state;
-        let output;
+        let preview;
 
         if (this.state.error) {
-            output = <p>Error: { this.state.error.message }</p>;
+            preview = <p>Error: { this.state.error.message }</p>;
         }
         else if (this.state.format === "BMP") {
-            output = <BMP buffer={buffer} />;
+            preview = <BMP buffer={buffer} />;
         }
-        else if (this.state.format === "TXT") {
-            output = <TXT buffer={buffer} />;
+        else {
+            preview = <TXT buffer={buffer} annotations={annotations} />;
         }
 
         return (
-            <div>
+            <div className="App">
                 <input type="file" id="file-input" onChange={this.handleChange.bind(this)} />
-                <div style={{ display: "flex" }}>
+                <div className="App-panels">
                     <div style={{ flex: 1, margin: 8 }}>
                         <h1>Hex</h1>
-                        <HexView buffer={buffer} annotations={annotations} />
+                        <div style={{ height: "100%", overflowY: "auto", display: "flex" }}>
+                            <HexView buffer={buffer} annotations={annotations} />
+                            {preview}
+                        </div>
                     </div>
-                    <div style={{ flex: 1, margin: 8 }}>
-                        <h1>Annotations</h1>
-                        <Annotations buffer={buffer} annotations={annotations} />
-                    </div>
-                    <div style={{ flex: 1, margin: 8 }}>
-                        <h1>Preview</h1>
-                        {output}
-                    </div>
+                    { annotations && annotations.length > 0 &&
+                        <div style={{ flex: 1, margin: 8 }}>
+                            <h1>Annotations</h1>
+                            <Annotations buffer={buffer} annotations={annotations} />
+                        </div>
+                    }
                 </div>
             </div>
         )

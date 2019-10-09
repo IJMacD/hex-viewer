@@ -1,10 +1,13 @@
 import React from 'react';
 
+import './TXT.css'
+import { getAnnotation, getAnnotationStyle } from '../annotate/util';
+
 /**
  *
- * @param {{ buffer: ArrayBuffer }} props
+ * @param {{ buffer: ArrayBuffer, annotations: import('../annotate').Annotation[] }} props
  */
-export default function TXT ({ buffer }) {
+export default function TXT ({ buffer, annotations }) {
     if (!buffer) {
         return null;
     }
@@ -19,19 +22,20 @@ export default function TXT ({ buffer }) {
         lines.push(line);
     }
 
+    const asciiAnnotations = annotations.filter(a => a.type === "ASCII" || a.type === "UTF-8");
+
     return (
-        <table style={{ fontFamily: "monospace", borderSpacing: 0 }}>
+        <table className="TXTPreview">
             <tbody>
             {
                 lines.map((l,i) => <tr key={i*16}>{l.map((x,j) => {
-                    return <td key={j}>{x}</td>;
+                    const offset = i * 16 + j;
+                    const a = getAnnotation(asciiAnnotations, offset);
+                    const style = getAnnotationStyle(asciiAnnotations, offset);
+                    return <td key={j} style={style} title={a && a.label}>{x}</td>;
                 })}</tr>)
             }
             </tbody>
         </table>
     );
-}
-
-function getAnnotation (annotations, offset) {
-    return annotations && annotations.find(a => offset >= a.start && offset < a.start + a.length);
 }

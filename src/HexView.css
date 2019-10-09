@@ -1,4 +1,7 @@
 .HexView {
     font-family: monospace;
+}
+
+.HexView table {
     border-spacing: 0;
 }

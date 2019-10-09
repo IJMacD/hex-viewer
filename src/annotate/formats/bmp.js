@@ -96,13 +96,13 @@ const template = [
         littleEndian: true,
     },
     {
-        type: "binary",
+        type: "bytes",
         label: "Color Map",
         start: { operation: "relative", to: "header_length" },
         length: { operation: "subtract", left: "pixel_data_start", right: { operation: "relative", to: "header_length" }},
     },
     {
-        type: "binary",
+        type: "bytes",
         label: "Pixel Data",
         start: "pixel_data_start",
         length: "image_size",

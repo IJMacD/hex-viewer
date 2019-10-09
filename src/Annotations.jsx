@@ -17,19 +17,23 @@ export default function Annotations ({ buffer, annotations }) {
             {
                 annotations.map((a,i) => {
                     let data = getAnnotationData(a, buffer);
+
                     if (a.display === "hex") {
                         data = `0x${data.toString(16)}`;
-                    } else if (a.display === "binary" && data instanceof ArrayBuffer) {
-                        const out = [];
-                        const view = new DataView(data);
-                        for (let i = 0; i < data.byteLength; i++) {
-                            out.push(view.getUint8(i).toString(2).padStart(8,"0"));
-                        }
-                        data = `0b${out.join("")}`;
                     } else if (data instanceof ArrayBuffer) {
-                        data = void 0;
+                        if (a.display === "binary") {
+                            const out = [];
+                            const view = new DataView(data);
+                            for (let i = 0; i < data.byteLength; i++) {
+                                out.push(view.getUint8(i).toString(2).padStart(8,"0"));
+                            }
+                            data = `0b${out.join("")}`;
+                        } else {
+                            data = void 0;
+                        }
                     }
-                    return (
+
+                    return a.label && (
                         <li key={i} style={{ borderColor: a.color, backgroundColor: opacity(a.color, 0.5) }}>
                             { typeof data !== "undefined" ? `${a.label}: ${data}` : `${a.label} (length: ${a.length})` }
                         </li>
