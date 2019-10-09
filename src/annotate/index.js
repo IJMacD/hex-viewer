@@ -5,6 +5,7 @@ const formats = {
     "GIF": require('./formats/gif'),
     "PNG": require('./formats/png'),
     "TXT": require('./formats/txt'),
+    "WAVE": require('./formats/wav'),
 };
 
 export function findFormat(buffer) {
