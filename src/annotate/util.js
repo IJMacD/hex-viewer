@@ -24,7 +24,7 @@ export function getAnnotationColor (template) {
     if (!template.color) {
         template.color = deterministicColor();
     }
-    
+
     return template.color;
 }
 
@@ -138,4 +138,21 @@ export function getAnnotationStyle(annotations, offset) {
 
 export function getAnnotation(annotations, offset) {
     return annotations && annotations.find(a => offset >= a.start && offset < a.start + a.length);
+}
+
+/**
+ *
+ * @param {ArrayBuffer} buffer
+ * @param {string|number[]} match
+ */
+export function markerMatch (buffer, match) {
+    const view = new DataView(buffer);
+    const len = match.length;
+
+    for (let i = 0; i < len; i++) {
+        const byte = (typeof match === "string") ? match.charCodeAt(i) : match[i];
+        if (view.getUint8(i) !== byte) return false;
+    }
+
+    return true;
 }

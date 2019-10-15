@@ -5,3 +5,7 @@
 .HexView table {
     border-spacing: 0;
 }
+
+.HexView td {
+    border: 1px solid transparent;
+}

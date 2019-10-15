@@ -6,6 +6,8 @@ const formats = {
     "PNG": require('./formats/png'),
     "TXT": require('./formats/txt'),
     "WAVE": require('./formats/wav'),
+    "AR": require('./formats/ar'),
+    "ELF": require('./formats/elf'),
 };
 
 export function findFormat(buffer) {
@@ -41,6 +43,7 @@ export function findFormat(buffer) {
  * @prop {number|object} [start]
  * @prop {number|object} [length]
  * @prop {string} [color]
+ * @prop {boolean|string} [littleEndian]
  * @prop {AnnotationTemplate[]} [children]
  * @prop {{ [value: number|string]: AnnotationTemplate[] }} [cases]
  * @prop {number} [value]
@@ -73,7 +76,7 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
 
     for (const template of templates) {
         /** @type {Annotation} */
-        const annotation = { length: 0, color: null, ...template };
+        const annotation = { start: 0, length: 0, color: null, ...template };
 
         annotation.start = (template.start ? +resolveReference(template.start, annotations, buffer, annotation) : start + groupStart);
         if (!template.length && (template.type === "ASCII" || template.type === "UTF-8")) {
@@ -84,6 +87,10 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
         }
         else {
             annotation.length = +evaluateExpression(getAnnotationLength(template), annotations, buffer, annotation);
+        }
+
+        if (typeof template.littleEndian === "string") {
+            annotation.littleEndian = Boolean(evaluateExpression(template.littleEndian, annotations, buffer, annotation));
         }
 
         if (template.type === "repeater") {

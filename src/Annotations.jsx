@@ -1,6 +1,6 @@
 import React from 'react';
 import './Annotations.css';
-import { getAnnotationData } from './annotate/util';
+import { getAnnotationData, getAnnotationLength } from './annotate/util';
 import { opacity } from './util';
 
 /**
@@ -31,6 +31,9 @@ export default function Annotations ({ buffer, annotations }) {
                         } else {
                             data = void 0;
                         }
+                    } else if (a.display === "binary") {
+                        const len = getAnnotationLength(a) * 8;
+                        data = "0b" + data.toString(2).padStart(len, "0");
                     }
 
                     return a.label && (
