@@ -8,6 +8,7 @@ const formats = {
     "WAVE": require('./formats/wav'),
     "AR": require('./formats/ar'),
     "ELF": require('./formats/elf'),
+    "ZIP": require('./formats/zip'),
 };
 
 export function findFormat(buffer) {
