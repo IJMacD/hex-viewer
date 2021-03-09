@@ -4,5 +4,31 @@
 
 .App-panels {
     height: 80%;
-    display: flex;
+    margin: 0.5em;
+}
+
+@media (min-width: 768px) {
+    .App-panels {
+        display: flex;
+        margin: 2em;
+    }
+
+    .input {
+        margin: 2em;
+        display: flex;
+    }
+}
+
+.input {
+    margin: 0.5em;
+}
+
+.input label {
+    font-weight: bold;
+    display: block;
+}
+
+.input textarea {
+    min-width: 400px;
+    min-height: 100px;
 }
