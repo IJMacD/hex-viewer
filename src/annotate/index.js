@@ -11,6 +11,9 @@ const formats = {
     "ZIP": require('./formats/zip'),
 };
 
+/**
+ * @param {ArrayBuffer} buffer
+ */
 export function findFormat(buffer) {
     for (const format in formats) {
         const template = formats[format].magic(buffer);

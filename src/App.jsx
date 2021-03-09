@@ -15,25 +15,46 @@ export default class App extends React.Component {
             format: null,
             annotations: null,
             error: null,
+            base64: "",
+            loading: false,
         }
     }
 
     /** @this {HTMLInputElement} */
-    handleChange (e) {
+    handleFileChange (e) {
         const files = e.target.files;
 
         if (files.length) {
+            this.setState({ buffer: null, format: null, annotation: null, loading: true });
+
             const reader = new FileReader();
+
             reader.addEventListener("load", e => {
                 if (typeof e.target.result === "string") return;
 
                 const buffer = e.target.result;
-                let { format, annotations } = findFormat(buffer) || { format: null, annotations: [] };
+                const { format, annotations } = findFormat(buffer) || { format: null, annotations: [] };
 
-                this.setState({ buffer, format, annotations });
+                this.setState({ buffer, format, annotations, loading: false });
             });
+
             reader.readAsArrayBuffer(files[0]);
         }
+    }
+
+    handleBase64Change (e) {
+        const base64 = e.target.value;
+        this.setState({ base64 });
+        try {
+            const decoded = atob(base64);
+            const buffer = new ArrayBuffer(decoded.length);
+            const view = new DataView(buffer);
+            for (let i = 0; i < decoded.length; i++) {
+                view.setUint8(i, decoded.charCodeAt(i));
+            }
+            const { format, annotations } = findFormat(buffer) || { format: null, annotations: [] };
+            this.setState({ buffer, format, annotations });
+        } catch (e) {}
     }
 
     componentDidCatch (error) {
@@ -41,7 +62,7 @@ export default class App extends React.Component {
     }
 
     render () {
-        const { buffer, annotations } = this.state;
+        const { buffer, annotations, base64, loading } = this.state;
         let preview;
 
         if (this.state.error) {
@@ -56,15 +77,25 @@ export default class App extends React.Component {
 
         return (
             <div className="App">
-                <input type="file" id="file-input" onChange={this.handleChange.bind(this)} />
+                <div className="input">
+                    <label>File Input<br/>
+                        <input type="file" id="file-input" onChange={this.handleFileChange.bind(this)} />
+                    </label>
+                    <label>Base64 Input<br/>
+                        <textarea value={base64} onChange={this.handleBase64Change.bind(this)} />
+                    </label>
+                </div>
                 <div className="App-panels">
-                    <div style={{ flex: 1, margin: 8 }}>
-                        <h1>Hex</h1>
-                        <div style={{ height: "100%", overflowY: "auto", display: "flex" }}>
-                            <HexView buffer={buffer} annotations={annotations} />
-                            {preview}
+                    { loading && <p>Loading...</p> }
+                    { buffer &&
+                        <div style={{ flex: 1, margin: 8 }}>
+                            <h1>Hex</h1>
+                            <div style={{ height: "100%", maxHeight: 1000, overflowY: "auto", display: "flex", flex: 1 }}>
+                                <HexView buffer={buffer} annotations={annotations} />
+                                {preview}
+                            </div>
                         </div>
-                    </div>
+                    }
                     { annotations && annotations.length > 0 &&
                         <div style={{ flex: 1, margin: 8 }}>
                             <h1>Annotations</h1>

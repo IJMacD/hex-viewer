@@ -1,5 +1,6 @@
 .HexView {
     font-family: monospace;
+    margin-right: 2em;
 }
 
 .HexView table {
