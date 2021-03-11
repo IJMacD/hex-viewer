@@ -9,6 +9,7 @@ const formats = {
     "AR": require('./formats/ar'),
     "ELF": require('./formats/elf'),
     "ZIP": require('./formats/zip'),
+    "REGQR": require('./formats/regqr'),
 };
 
 /**
@@ -165,7 +166,7 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
  */
 function evaluateExpression (expr, annotations, buffer, self=null) {
     if (typeof expr === "string") {
-        const match = /[+=-]/.exec(expr);
+        const match = /[+=*/-]/.exec(expr);
         if (match) {
             const [ left, right ] = expr.split(match[0], 2).map(s => s.trim()).map(s => evaluateExpression(s, annotations, buffer, self));
 
@@ -176,6 +177,10 @@ function evaluateExpression (expr, annotations, buffer, self=null) {
                     return +left + +right;
                 case "-":
                     return +left - +right;
+                case "*":
+                    return +left * +right;
+                case "/":
+                    return +left / +right;
             }
         }
     }

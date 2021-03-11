@@ -86,38 +86,43 @@ function hslToRgb(h, s, l){
  * @returns {string|number|ArrayBuffer}
  */
 export function getAnnotationData (annotation, buffer) {
-    const view = new DataView(buffer);
-    let data;
-    switch (annotation.type) {
-        case "ASCII":
-        case "UTF-8":
-            data = [...Array(annotation.length)].map((_, i) => String.fromCharCode(view.getUint8(annotation.start + i))).join("");
-            if (data[data.length-1] === "\0") data = data.substring(0,data.length - 1);
-            break;
-        case "Uint8":
-        default:
-            data = view.getUint8(annotation.start);
-            break;
-        case "Int8":
-            data = view.getInt8(annotation.start);
-            break;
-        case "Uint16":
-            data = view.getUint16(annotation.start, annotation.littleEndian);
-            break;
-        case "Int16":
-            data = view.getInt16(annotation.start, annotation.littleEndian);
-            break;
-        case "Uint32":
-            data = view.getUint32(annotation.start, annotation.littleEndian);
-            break;
-        case "Int32":
-            data = view.getInt32(annotation.start, annotation.littleEndian);
-            break;
-        case "bytes":
-            data = buffer.slice(annotation.start, annotation.start + annotation.length);
-            break;
+    try {
+        const view = new DataView(buffer);
+        let data;
+        switch (annotation.type) {
+            case "ASCII":
+            case "UTF-8":
+                data = [...Array(annotation.length)].map((_, i) => String.fromCharCode(view.getUint8(annotation.start + i))).join("");
+                if (data[data.length-1] === "\0") data = data.substring(0,data.length - 1);
+                break;
+            case "Uint8":
+            default:
+                data = view.getUint8(annotation.start);
+                break;
+            case "Int8":
+                data = view.getInt8(annotation.start);
+                break;
+            case "Uint16":
+                data = view.getUint16(annotation.start, annotation.littleEndian);
+                break;
+            case "Int16":
+                data = view.getInt16(annotation.start, annotation.littleEndian);
+                break;
+            case "Uint32":
+                data = view.getUint32(annotation.start, annotation.littleEndian);
+                break;
+            case "Int32":
+                data = view.getInt32(annotation.start, annotation.littleEndian);
+                break;
+            case "bytes":
+                data = buffer.slice(annotation.start, annotation.start + annotation.length);
+                break;
+        }
+        return data;
+    } catch (e) {
+        // Todo: check appropriate error return type
+        return "";
     }
-    return data;
 }
 
 export function getAnnotationStyle(annotations, offset) {
