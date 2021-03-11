@@ -9,6 +9,7 @@ const formats = {
     "AR": require('./formats/ar'),
     "ELF": require('./formats/elf'),
     "ZIP": require('./formats/zip'),
+    "MIDI": require('./formats/midi'),
 };
 
 export function findFormat(buffer) {
