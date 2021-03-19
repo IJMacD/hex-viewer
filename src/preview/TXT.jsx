@@ -5,16 +5,16 @@ import { getAnnotation, getAnnotationStyle } from '../annotate/util';
 
 /**
  *
- * @param {{ buffer: ArrayBuffer, annotations: import('../annotate').Annotation[] }} props
+ * @param {{ buffer: ArrayBuffer, annotations: import('../annotate').Annotation[], offset?: number, byteLimit?: number }} props
  */
-export default function TXT ({ buffer, annotations }) {
+export default function TXT ({ buffer, annotations, offset = 0, byteLimit = 1024 }) {
     if (!buffer) {
         return null;
     }
 
     const lines = [];
-    for (let i = 0; i < buffer.byteLength; i += 16) {
-        const view = new DataView(buffer, i, Math.min(16, buffer.byteLength - i));
+    for (let i = 0; i < buffer.byteLength && i < byteLimit; i += 16) {
+        const view = new DataView(buffer, offset + i, Math.min(16, buffer.byteLength - i));
         const line = [];
         for (let j = 0; j < view.byteLength; j++) {
             line.push(String.fromCharCode(view.getUint8(j)));
@@ -29,9 +29,9 @@ export default function TXT ({ buffer, annotations }) {
             <tbody>
             {
                 lines.map((l,i) => <tr key={i*16}>{l.map((x,j) => {
-                    const offset = i * 16 + j;
-                    const a = getAnnotation(asciiAnnotations, offset);
-                    const style = getAnnotationStyle(asciiAnnotations, offset);
+                    const o = i * 16 + j;
+                    const a = getAnnotation(asciiAnnotations, offset + o);
+                    const style = getAnnotationStyle(asciiAnnotations, offset + o);
                     return <td key={j} style={style} title={a && a.label}>{x}</td>;
                 })}</tr>)
             }

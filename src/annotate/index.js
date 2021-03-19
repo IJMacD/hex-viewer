@@ -14,15 +14,12 @@ const formats = {
 /**
  * @param {ArrayBuffer} buffer
  */
-export function findFormat(buffer) {
+export function findFormatTemplate(buffer) {
     for (const format in formats) {
         const template = formats[format].magic(buffer);
 
         if (template) {
-            return {
-                format,
-                annotations: getAnnotations(template, buffer),
-            };
+            return template;
         }
     }
 }
@@ -84,6 +81,7 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
 
         annotation.start = (template.start ? +resolveReference(template.start, annotations, buffer, annotation) : start + groupStart);
         if (!template.length && (template.type === "ASCII" || template.type === "UTF-8")) {
+            // Find NULL terminator
             const view = new DataView(buffer, annotation.start);
             let length;
             for (length = 0; length < view.byteLength && view.getUint8(length) !== 0; length++) { }
