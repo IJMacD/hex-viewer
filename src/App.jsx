@@ -5,6 +5,7 @@ import { findFormatTemplate, getAnnotations } from './annotate';
 import BMP from './preview/BMP';
 import TXT from './preview/TXT';
 import './App.css';
+import AnnotationEditor from './AnnotationEditor';
 
 export default class App extends React.Component {
     constructor (props) {
@@ -17,6 +18,7 @@ export default class App extends React.Component {
             error: null,
             base64: "",
             loading: false,
+            annotationEditMode: false,
             template: null,
             offsetText: "0",
         }
@@ -106,6 +108,11 @@ export default class App extends React.Component {
                     <label>Base64 Input<br/>
                         <textarea value={base64} onChange={this.handleBase64Change.bind(this)} />
                     </label>
+                    <div>
+                        <button onClick={() => this.setState({ annotationEditMode: !annotationEditMode })}>
+                            Edit Annotations
+                        </button>
+                    </div>
                 </div>
                 <div className="App-panels">
                     { loading && <p>Loading...</p> }
@@ -127,6 +134,13 @@ export default class App extends React.Component {
                         <div style={{ flex: 1, margin: 8 }}>
                             <h1>Annotations</h1>
                             <Annotations buffer={buffer} annotations={annotations} />
+                        </div>
+                    }
+                    {
+                        annotationEditMode &&
+                        <div style={{ flex: 1, margin: 8, overflowY: "auto" }}>
+                            <h1>Annotation Editor</h1>
+                            <AnnotationEditor template={template} setTemplate={template => this.setState({ template, annotations: getAnnotations(template, buffer) })} />
                         </div>
                     }
                 </div>

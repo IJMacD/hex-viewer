@@ -144,9 +144,10 @@ export function getAnnotation(annotations, offset) {
  *
  * @param {ArrayBuffer} buffer
  * @param {string|number[]} match
+ * @param {number} [offset]
  */
-export function markerMatch (buffer, match) {
-    const view = new DataView(buffer);
+export function markerMatch (buffer, match, offset = 0) {
+    const view = new DataView(buffer, offset);
     const len = match.length;
 
     for (let i = 0; i < len; i++) {

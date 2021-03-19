@@ -36,9 +36,11 @@ export default function Annotations ({ buffer, annotations }) {
                         data = "0b" + data.toString(2).padStart(len, "0");
                     }
 
-                    return a.label && (
+                    const { label = "" } = a;
+
+                    return (
                         <li key={i} style={{ borderColor: a.color, backgroundColor: opacity(a.color, 0.5) }}>
-                            { typeof data !== "undefined" ? `${a.label}: ${data}` : `${a.label} (length: ${a.length})` }
+                            { typeof data !== "undefined" ? `${label}: ${data}` : `${label} (length: ${a.length})` }
                         </li>
                     );
                 })
