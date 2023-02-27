@@ -7,47 +7,53 @@ export function magic (buffer) {
 }
 
 const template = [
-    {"label":"Magic","type":"ASCII","start":0,"length":4,"color":"#ff0000"},
-    {"label":"CRC","type":"bytes","length":4,"color":"#00ff00"},
-    {"label":"Magic Client","type":"bytes","length":2,"color":"#0000ff"},
-    {"label":"wVer","type":"Uint16","littleEndian":true,"color":"#00ffff"},
-    {"label":"wVerClient","type":"Uint16","littleEndian":true,"color":"#ff00ff"},
-    {"label":"bPlatformCreate","type":"bytes","length":1,"color":"#ff8000"},
-    {"label":"bPlatformAccess","type":"bytes","length":1,"color":"#80ff00"},
-    {"label":"dwReserved1","type":"bytes","length":4,"color":"#00ff80"},
-    {"label":"dwReserved2","type":"bytes","length":4,"color":"#007fff"},
-    {"label":"bidUnused","type":"bytes","length":8,"color":"#7f00ff"},
-    {"label":"bidNextP","type":"Uint64","littleEndian":true,"color":"#ff0080"},
-    {"label":"dwUnique","type":"Uint32","littleEndian":true,"color":"#ff0000"},
-    {"label":"rgnid","type":"bytes","length":128,"color":"#00ff00"},
-    {"label":"qwUnused","type":"bytes","length":8,"color":"#0000ff"},
+    {"label":"Magic","type":"ASCII","start":0,"length":4},
+    {"label":"CRC","type":"bytes","length":4},
+    {"label":"Magic Client","type":"bytes","length":2},
+    {"label":"wVer","type":"Uint16","littleEndian":true},
+    {"label":"wVerClient","type":"Uint16","littleEndian":true},
+    {"label":"bPlatformCreate","type":"bytes","length":1},
+    {"label":"bPlatformAccess","type":"bytes","length":1},
+    {"label":"dwReserved1","type":"bytes","length":4},
+    {"label":"dwReserved2","type":"bytes","length":4},
+    {"label":"bidUnused","type":"bytes","length":8},
+    {"label":"bidNextP","type":"Uint64","littleEndian":true},
+    {"label":"dwUnique","type":"Uint32","littleEndian":true},
+    {"label":"rgnid[]","type":"repeater",count:32,children:[
+        {
+            "label":"rgnid[]",
+            type:"Uint32",
+            littleEndian: true
+        }
+    ]},
+    {"label":"qwUnused","type":"bytes","length":8},
     {
         "label":"root",
         "type": "group",
         "children": [
-            {"label":"dwReserved","type":"bytes","length":4,"color":"#ffff00"},
-            {"label":"ibFileEof","type":"Uint64","littleEndian":true,"color":"#40ff00"},
-            {"label":"ibAMapLast","type":"Uint64","littleEndian":true,"color":"#00ff40"},
-            {"label":"cbAMapFree","type":"Uint64","littleEndian":true,"color":"#00ffbf"},
-            {"label":"cbPMapFree","type":"Uint64","littleEndian":true,"color":"#0040ff"},
-            {"label":"BREFNBT","type":"bytes","length":16,"color":"#4000ff"},
-            {"label":"BREFBBT","type":"bytes","length":16,"color":"#bf00ff"},
-            {"label":"fAMapValid","type":"bytes","length":1,"color":"#ff00bf"},
-            {"label":"bReserved","type":"bytes","length":1,"color":"#ff0040"},
-            {"label":"wReserved","type":"bytes","length":2,"color":"#ff2000"}
+            {"label":"dwReserved","type":"bytes","length":4},
+            {"label":"ibFileEof","type":"Uint64","littleEndian":true,"display":"byteSize"},
+            {"label":"ibAMapLast","type":"Uint64","littleEndian":true},
+            {"label":"cbAMapFree","type":"Uint64","littleEndian":true},
+            {"label":"cbPMapFree","type":"Uint64","littleEndian":true},
+            {"label":"BREFNBT","type":"group",children:[{label:"bid",type:"Uint64",littleEndian:true},{label:"ib",type:"Uint64",littleEndian:true}]},
+            {"label":"BREFBBT","type":"group",children:[{label:"bid",type:"Uint64",littleEndian:true},{label:"ib",type:"Uint64",littleEndian:true}]},
+            {"label":"fAMapValid","type":"Uint8","length":1,display:"hex","enum":{0:"INVALID_AMAP",1:"VALID_AMAP1",2:"VALID_AMAP2"}},
+            {"label":"bReserved","type":"bytes","length":1},
+            {"label":"wReserved","type":"bytes","length":2}
         ],
     },
-    {"label":"dwAlign","type":"bytes","length":4,"color":"#00ffff"},
-    {"label":"rgbFM","type":"bytes","length":128,"color":"#ff00ff"},
-    {"label":"rgbFP","type":"bytes","length":128,"color":"#ff8000"},
-    {"label":"bSentinel","type":"bytes","length":1,"color":"#80ff00"},
-    {"label":"bCryptMethod","type":"bytes","length":1,"color":"#00ff80"},
-    {"label":"rgbReserved","type":"bytes","length":2,"color":"#007fff"},
-    {"label":"bidNextB","type":"Uint64","littleEndian":true,"color":"#7f00ff"},
-    {"label":"dwCRCFull","type":"bytes","length":4,"color":"#ff0080"},
-    {"label":"rgbReserved","type":"bytes","length":3,"color":"#ff4000"},
-    {"label":"bReserved","type":"bytes","length":1,"color":"#ffbf00"},
-    {"label":"rgbReserved3","type":"bytes","length":32,"color":"#bfff00"}
+    {"label":"dwAlign","type":"bytes","length":4},
+    {"label":"rgbFM","type":"bytes","length":128},
+    {"label":"rgbFP","type":"bytes","length":128},
+    {"label":"bSentinel","type":"bytes","length":1},
+    {"label":"bCryptMethod","type":"Uint8","length":1,display:"hex","enum":{0:"NDB_CRYPT_NONE",1:"NDB_CRYPT_PERMUTE",2:"NDB_CRYPT_CYCLIC",3:"NDB_CRYPT_EDPCRYPTED"}},
+    {"label":"rgbReserved","type":"bytes","length":2},
+    {"label":"bidNextB","type":"Uint64","littleEndian":true},
+    {"label":"dwCRCFull","type":"bytes","length":4},
+    {"label":"rgbReserved","type":"bytes","length":3},
+    {"label":"bReserved","type":"bytes","length":1},
+    {"label":"rgbReserved3","type":"bytes","length":32}
 ];
 
 export default template;

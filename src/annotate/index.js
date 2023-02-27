@@ -36,6 +36,8 @@ export function findFormatTemplate(buffer) {
  * @prop {number} length
  * @prop {string} color
  * @prop {boolean} [littleEndian]
+ * @prop {{ [value: number]: string }} [enum]
+ * @prop {number} [count]
  */
 
 /**
@@ -47,7 +49,9 @@ export function findFormatTemplate(buffer) {
  * @prop {number|object} [length]
  * @prop {string} [color]
  * @prop {boolean|string} [littleEndian]
+ * @prop {{ [value: number]: string }} [enum]
  * @prop {AnnotationTemplate[]} [children]
+ * @prop {number} [count]
  * @prop {{ [value: number|string]: AnnotationTemplate[] }} [cases]
  * @prop {number} [value]
  * @prop {string} [condition]
@@ -101,12 +105,17 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
             if (!template.children) {
                 throw Error("Expected children in the annotation");
             }
+            annotation.color = getAnnotationColor(template);
+            annotations.push(annotation);
             let absoluteStart = start + groupStart;
-            while (absoluteStart < buffer.byteLength) {
+            let childCount = 0;
+            let end = absoluteStart;
+
+            while (absoluteStart < buffer.byteLength && (typeof template.count === "undefined" || childCount < template.count)) {
                 processAnnotationTemplates(template.children, annotations, buffer, absoluteStart, depth + 1);
 
                 const last = annotations[annotations.length - 1];
-                const end = last.start + last.length;
+                end = last.start + last.length;
 
                 if (end === absoluteStart) {
                     break;
@@ -114,7 +123,11 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
 
                 start = end - absoluteStart;
                 absoluteStart = end;
+                childCount++;
             }
+
+            annotation.length = end - absoluteStart;
+            annotation.count = childCount;
         }
         else if (template.type === "group") {
             if (!template.children) {

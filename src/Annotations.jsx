@@ -2,6 +2,7 @@ import React from 'react';
 import './Annotations.css';
 import { getAnnotationData, getAnnotationLength } from './annotate/util';
 import { opacity } from './util';
+import { ByteSize } from './ByteSize';
 
 /**
  *
@@ -16,11 +17,28 @@ export default function Annotations ({ buffer, annotations }) {
         <ul className="Annotations">
             {
                 annotations.map((a,i) => {
+                    /** @type {import('react').ReactElement|string|number|BigInt|ArrayBuffer|null} */
                     let data = getAnnotationData(a, buffer);
 
-                    if (a.display === "hex") {
-                        data = `0x${data.toString(16)}`;
-                    } else if (data instanceof ArrayBuffer) {
+                    let enumValue;
+
+                    if ((typeof data === "number" || typeof data === "bigint") && a.enum) {
+                        enumValue = a.enum[data.toString()];
+                    }
+
+                    if (typeof data === "number" || typeof data === "bigint") {
+                        if (a.display === "hex") {
+                            data = `0x${data.toString(16)}`;
+                        }
+                        else if (a.display === "byteSize") {
+                            data = <ByteSize bytes={data} />;
+                        }
+                        else if (a.display === "binary") {
+                            const len = getAnnotationLength(a) * 8;
+                            data = "0b" + data?.toString(2).padStart(len, "0");
+                        }
+                    }
+                    else if (data instanceof ArrayBuffer) {
                         if (a.display === "binary") {
                             const out = [];
                             const view = new DataView(data);
@@ -40,18 +58,32 @@ export default function Annotations ({ buffer, annotations }) {
                         else {
                             data = null;
                         }
-                    } else if (a.display === "binary") {
-                        const len = getAnnotationLength(a) * 8;
-                        data = "0b" + data?.toString(2).padStart(len, "0");
                     }
 
                     const { label = "" } = a;
 
+                    let title = label;
+
+                    if (typeof data === "string" || typeof data === "number" || typeof data === "bigint") {
+                        title = `${label}: ${data}`;
+                    }
+                    else if (React.isValidElement(data)) {
+                        title = <>{label}: {data}</>;
+                    }
+                    else if (a.count > 0) {
+                        title = `${label} (count: ${a.count})`;
+                    }
+                    else if (a.length > 0) {
+                        title = `${label} (length: ${a.length})`;
+                    }
+
+                    if (enumValue) {
+                        title = <>{title} <code style={{color: "#333"}}>{enumValue}</code></>;
+                    }
+
                     return (
                         <li key={i} style={{ borderColor: a.color, backgroundColor: opacity(a.color, 0.5), marginLeft: a.depth*16 }}>
-                            { data !== null ? `${label}: ${data}` : (
-                                a.length > 0 ? `${label} (length: ${a.length})` : label
-                            ) }
+                            { title }
                         </li>
                     );
                 })

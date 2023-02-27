@@ -87,7 +87,7 @@ function hslToRgb(h, s, l){
  */
 export function getAnnotationData (annotation, buffer) {
     if (annotation.length === 0) return null;
-    if (annotation.type === "group") return null;
+    if (typeof annotation.children !== "undefined") return null;
 
     const view = new DataView(buffer);
     let data;

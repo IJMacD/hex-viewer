@@ -43,7 +43,7 @@ function Annotation ({ annotation, onRemove }) {
         <div style={{ border: "1px solid #ccc", padding: 4, position: "relative" }}>
             <dl>
                 {
-                    Object.entries(annotation).filter(([key, value]) => typeof value !== "undefined" && (typeof value !== "boolean" || value)).map(([key, value]) => (
+                    Object.entries(annotation).filter(ddFilter).map(([key, value]) => (
                         <>
                             <dt>{ key }</dt>
                             <dd>{ value }</dd>
@@ -54,6 +54,12 @@ function Annotation ({ annotation, onRemove }) {
             <button onClick={onRemove} style={{ position: "absolute", top: 8, right: 8 }}>Remove</button>
         </div>
     );
+}
+
+function ddFilter ([key, value]) {
+    return typeof value === "string"
+        || typeof value === "number"
+        || (typeof value === "boolean" && value);
 }
 
 function NewAnnotation ({ addAnnotation }) {
