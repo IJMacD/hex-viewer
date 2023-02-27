@@ -14,7 +14,7 @@ export function getAnnotationLength (annotation) {
             return 4;
         case "Uint64":
         case "Int64":
-            return 4;
+            return 8;
         default:
             return 1;
     }
@@ -83,9 +83,12 @@ function hslToRgb(h, s, l){
  *
  * @param {import(".").Annotation} annotation
  * @param {ArrayBuffer} buffer
- * @returns {string|number|ArrayBuffer}
+ * @returns {string|number|ArrayBuffer|BigInt|null}
  */
 export function getAnnotationData (annotation, buffer) {
+    if (annotation.length === 0) return null;
+    if (annotation.type === "group") return null;
+
     const view = new DataView(buffer);
     let data;
     switch (annotation.type) {
@@ -113,10 +116,17 @@ export function getAnnotationData (annotation, buffer) {
         case "Int32":
             data = view.getInt32(annotation.start, annotation.littleEndian);
             break;
+        case "Uint64":
+            data = view.getBigUint64(annotation.start, annotation.littleEndian);
+            break;
+        case "Int64":
+            data = view.getBigInt64(annotation.start, annotation.littleEndian);
+            break;
         case "bytes":
             data = buffer.slice(annotation.start, annotation.start + annotation.length);
             break;
     }
+
     return data;
 }
 
@@ -137,7 +147,7 @@ export function getAnnotationStyle(annotations, offset) {
 }
 
 export function getAnnotation(annotations, offset) {
-    return annotations && annotations.find(a => offset >= a.start && offset < a.start + a.length);
+    return annotations && annotations.find(a => offset >= a.start && offset < a.start + a.length && a.type !== "group");
 }
 
 /**

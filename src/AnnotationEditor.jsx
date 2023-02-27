@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./AnnotationEditor.css";
 
-const types = [ "bytes", "ASCII", "UTF-8", "Uint8", "Uint16", "Uint32" ];
+const types = [ "bytes", "ASCII", "UTF-8", "Uint8", "Uint16", "Uint32", "Uint64" ];
 
 export default function AnnotationEditor ({ template = [], setTemplate }) {
 
@@ -30,11 +30,20 @@ export default function AnnotationEditor ({ template = [], setTemplate }) {
 }
 
 function Annotation ({ annotation, onRemove }) {
+    if (annotation.children) {
+        return (
+            <div style={{ border: "1px solid #ccc", padding: 4, position: "relative" }}>
+                {annotation.label}
+                <button onClick={onRemove} style={{ position: "absolute", top: 8, right: 8 }}>Remove</button>
+            </div>
+        );
+    }
+
     return (
         <div style={{ border: "1px solid #ccc", padding: 4, position: "relative" }}>
             <dl>
                 {
-                    Object.entries(annotation).filter(([key, value]) => typeof value != "undefined").map(([key, value]) => (
+                    Object.entries(annotation).filter(([key, value]) => typeof value !== "undefined" && (typeof value !== "boolean" || value)).map(([key, value]) => (
                         <>
                             <dt>{ key }</dt>
                             <dd>{ value }</dd>
@@ -54,6 +63,7 @@ function NewAnnotation ({ addAnnotation }) {
     const [ length, setLength ] = useState(0);
     const [ enableStart, setEnableStart ] = useState(false);
     const [ enableLength, setEnableLength ] = useState(false);
+    const [ littleEndian, setLittleEndian ] = useState(false);
 
     function handleAdd () {
         addAnnotation({
@@ -61,12 +71,13 @@ function NewAnnotation ({ addAnnotation }) {
             type,
             start: enableStart ? start : void 0,
             length: enableLength ? length : void 0,
+            littleEndian: littleEndian || void 0,
         });
         setLabel("");
-        setStart(0);
-        setLength(0);
-        setEnableStart(false);
-        setEnableLength(false);
+        // setStart(0);
+        // setLength(0);
+        // setEnableStart(false);
+        // setEnableLength(false);
     }
 
     return (
@@ -88,6 +99,9 @@ function NewAnnotation ({ addAnnotation }) {
             <label>Length
                 <input type="checkbox" checked={enableLength} onChange={e => setEnableLength(e.target.checked)} />
                 <input value={ length } onChange={e => setLength(+e.target.value)} type="number" disabled={!enableLength} />
+            </label>
+            <label>Little Endian
+                <input type="checkbox" checked={littleEndian} onChange={e => setLittleEndian(e.target.checked)} />
             </label>
             <button onClick={handleAdd}>Add</button>
         </div>

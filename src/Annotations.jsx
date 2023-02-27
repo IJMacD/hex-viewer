@@ -28,19 +28,30 @@ export default function Annotations ({ buffer, annotations }) {
                                 out.push(view.getUint8(i).toString(2).padStart(8,"0"));
                             }
                             data = `0b${out.join("")}`;
-                        } else {
-                            data = void 0;
+                        }
+                        else if (data.byteLength < 10) {
+                            const out = [];
+                            const view = new DataView(data);
+                            for (let i = 0; i < data.byteLength; i++) {
+                                out.push(view.getUint8(i).toString(16).padStart(2,"0"));
+                            }
+                            data = `0x${out.join("")}`;
+                        }
+                        else {
+                            data = null;
                         }
                     } else if (a.display === "binary") {
                         const len = getAnnotationLength(a) * 8;
-                        data = "0b" + data.toString(2).padStart(len, "0");
+                        data = "0b" + data?.toString(2).padStart(len, "0");
                     }
 
                     const { label = "" } = a;
 
                     return (
-                        <li key={i} style={{ borderColor: a.color, backgroundColor: opacity(a.color, 0.5) }}>
-                            { typeof data !== "undefined" ? `${label}: ${data}` : `${label} (length: ${a.length})` }
+                        <li key={i} style={{ borderColor: a.color, backgroundColor: opacity(a.color, 0.5), marginLeft: a.depth*16 }}>
+                            { data !== null ? `${label}: ${data}` : (
+                                a.length > 0 ? `${label} (length: ${a.length})` : label
+                            ) }
                         </li>
                     );
                 })

@@ -117,29 +117,29 @@ export default class App extends React.Component {
                 <div className="App-panels">
                     { loading && <p>Loading...</p> }
                     { buffer &&
-                        <div style={{ flex: 1, margin: 8 }}>
+                        <div style={{ flex: 1 }}>
                             <h1>Hex</h1>
                             <div>
                                 <button onClick={() => setOffsetText((offset - byteLimit).toString())} disabled={offset < byteLimit}>&lt;</button>
                                 <input value={offset} onChange={e => setOffsetText(e.target.value)} />
                                 <button onClick={() => setOffsetText((offset + byteLimit).toString())}>&gt;</button>
                             </div>
-                            <div style={{ height: "100%", maxHeight: 1000, overflowY: "auto", display: "flex", flex: 1 }}>
+                            <div style={{ display: 'flex' }}>
                                 <HexView buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />
                                 {preview}
                             </div>
                         </div>
                     }
                     { annotations && annotations.length > 0 &&
-                        <div style={{ flex: 1, margin: 8 }}>
+                        <div style={{  }}>
                             <h1>Annotations</h1>
                             <Annotations buffer={buffer} annotations={annotations} />
                         </div>
                     }
                     {
                         annotationEditMode &&
-                        <div style={{ flex: 1, margin: 8, overflowY: "auto" }}>
-                            <h1>Annotation Editor</h1>
+                        <div style={{  }}>
+                            <h1>Template Editor</h1>
                             <AnnotationEditor template={template} setTemplate={template => this.setState({ template, annotations: getAnnotations(template, buffer) })} />
                         </div>
                     }

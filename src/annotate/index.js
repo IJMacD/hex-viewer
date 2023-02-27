@@ -10,6 +10,7 @@ const formats = {
     "ELF": require('./formats/elf'),
     "ZIP": require('./formats/zip'),
     "SQLITE": require('./formats/sqlite'),
+    "PST": require('./formats/pst'),
 };
 
 /**
@@ -73,12 +74,12 @@ export function getAnnotations (template, buffer) {
  * @param {ArrayBuffer} buffer
  * @param {number} groupStart
  */
-function processAnnotationTemplates(templates, annotations, buffer, groupStart=0) {
+function processAnnotationTemplates(templates, annotations, buffer, groupStart=0, depth=0) {
     let start = 0;
 
     for (const template of templates) {
         /** @type {Annotation} */
-        const annotation = { start: 0, length: 0, color: null, ...template };
+        const annotation = { start: 0, length: 0, color: null, depth, ...template };
 
         annotation.start = (template.start ? +resolveReference(template.start, annotations, buffer, annotation) : start + groupStart);
         if (!template.length && (template.type === "ASCII" || template.type === "UTF-8")) {
@@ -97,9 +98,12 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
         }
 
         if (template.type === "repeater") {
+            if (!template.children) {
+                throw Error("Expected children in the annotation");
+            }
             let absoluteStart = start + groupStart;
             while (absoluteStart < buffer.byteLength) {
-                processAnnotationTemplates(template.children, annotations, buffer, absoluteStart);
+                processAnnotationTemplates(template.children, annotations, buffer, absoluteStart, depth + 1);
 
                 const last = annotations[annotations.length - 1];
                 const end = last.start + last.length;
@@ -111,7 +115,29 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
                 start = end - absoluteStart;
                 absoluteStart = end;
             }
-        } else if (template.type === "switch") {
+        }
+        else if (template.type === "group") {
+            if (!template.children) {
+                throw Error("Expected children in the annotation");
+            }
+            let absoluteStart = start + groupStart;
+            annotation.color = getAnnotationColor(template);
+            annotations.push(annotation);
+            processAnnotationTemplates(template.children, annotations, buffer, absoluteStart, depth + 1);
+
+            const last = annotations[annotations.length - 1];
+            const end = last.start + last.length;
+
+            annotation.length = end - absoluteStart;
+
+            if (end === absoluteStart) {
+                break;
+            }
+
+            start = end - absoluteStart;
+            absoluteStart = end;
+        }
+        else if (template.type === "switch") {
             let val = null;
 
             if (template.value) {
