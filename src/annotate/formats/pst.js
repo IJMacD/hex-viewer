@@ -18,29 +18,37 @@ const pageEnum = {
 
 const pageTrailer = [
     {"label":"ptype","type":"Uint8","display":"hex","color":"#efff00","enum":pageEnum},
-    {"label":"pTypeRepeat","type":"Uint8","display":"hex","color":"#cfff00","enum":pageEnum},
+    {"label":"ptypeRepeat","type":"Uint8","display":"hex","color":"#cfff00","enum":pageEnum},
     {"label":"wSig","type":"Uint16","littleEndian":true,"color":"#afff00"},
     {"label":"dwCRC","type":"bytes","length":4,"color":"#8fff00"},
     {"label":"bid","type":"Uint64","littleEndian":true,"color":"#70ff00"}
 ];
 
-const BTPage = [
-    {"label":"rgentries","type":"repeater","length":488,"color":"#ff5000",count:3,children:[
-        {label:"btkey",type:"Uint64",littleEndian:true},
-        ...BREF()
-    ]},
-    {"label":"cEnt","type":"Uint8","color":"#ff7000"},
-    {"label":"cEntMax","type":"Uint8","color":"#ff8f00"},
-    {"label":"cbEnt","type":"Uint8","color":"#ffaf00"},
-    {"label":"cLevel","type":"Uint8","color":"#ffcf00"},
-    {"label":"dwPadding","type":"bytes","length":4,"color":"#ffef00"},
-    ...pageTrailer
-];
+/**
+ * @param {string} id
+ */
+function BTPage (id) {
+    return [
+        {"label":"rgentries","type":"repeater","length":488,"color":"#ff5000",count:`${id}_cEnt`,children:[
+            {label:"btkey",type:"Uint64",littleEndian:true},
+            ...BREF(id + "_rgentries[]")
+        ]},
+        {"label":"cEnt","id":`${id}_cEnt`,"type":"Uint8","color":"#ff7000"},
+        {"label":"cEntMax","type":"Uint8","color":"#ff8f00"},
+        {"label":"cbEnt","type":"Uint8","color":"#ffaf00"},
+        {"label":"cLevel","type":"Uint8","color":"#ffcf00"},
+        {"label":"dwPadding","type":"bytes","length":4,"color":"#ffef00"},
+        ...pageTrailer
+    ];
+}
 
+/**
+ * @param {string} [id]
+ */
 function BREF(id) {
     return [
         {"label":"bid","type":"Uint64","littleEndian":true,"color":"#ff00bf"},
-        {"label":"ib","id":id,"type":"Uint64","littleEndian":true,"color":"#ff0020"}
+        {"label":"ib","id":`${id}_ib`,"type":"Uint64","littleEndian":true,"color":"#ff0020"}
     ];
 }
 
@@ -67,8 +75,8 @@ const template = [
         {"label":"ibAMapLast","type":"Uint64","littleEndian":true,"color":"#00bfff"},
         {"label":"cbAMapFree","type":"Uint64","littleEndian":true,"color":"#0040ff"},
         {"label":"cbPMapFree","type":"Uint64","littleEndian":true,"color":"#4000ff"},
-        {"label":"BREFNBT","type":"group","children":BREF("brefnbt_ib"),"color":"#bf00ff"},
-        {"label":"BREFBBT","type":"group","children":BREF("brefbbt_ib"),"color":"#ff2000"},
+        {"label":"BREFNBT","type":"group","children":BREF("brefnbt"),"color":"#bf00ff"},
+        {"label":"BREFBBT","type":"group","children":BREF("brefbbt"),"color":"#ff2000"},
         {"label":"fAMapValid","type":"Uint8","length":1,"display":"hex","enum":{"0":"INVALID_AMAP","1":"VALID_AMAP1","2":"VALID_AMAP2"},"color":"#ffdf00"},
         {"label":"bReserved","type":"bytes","length":1,"color":"#dfff00"},
         {"label":"wReserved","type":"bytes","length":2,"color":"#9fff00"}
@@ -84,8 +92,8 @@ const template = [
     {"label":"rgbReserved","type":"bytes","length":3,"color":"#0060ff"},
     {"label":"bReserved","type":"bytes","length":1,"color":"#0020ff"},
     {"label":"rgbReserved3","type":"bytes","length":32,"color":"#2000ff"},
-    {"label":"NBT Root",type:"group","start":"brefnbt_ib",children:BTPage},
-    {"label":"BBT Root",type:"group","start":"brefbbt_ib",children:BTPage}
+    {"label":"NBT Root",type:"group","start":"brefnbt_ib",children:BTPage("nbt_root")},
+    {"label":"BBT Root",type:"group","start":"brefbbt_ib",children:BTPage("bbt_root")}
 ];
 
 export default template;

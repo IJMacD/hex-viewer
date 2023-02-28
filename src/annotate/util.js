@@ -102,7 +102,6 @@ export function getAnnotationData (annotation, buffer) {
                 if (data[data.length-1] === "\0") data = data.substring(0,data.length - 1);
                 break;
             case "Uint8":
-            default:
                 data = view.getUint8(annotation.start);
                 break;
             case "Int8":
