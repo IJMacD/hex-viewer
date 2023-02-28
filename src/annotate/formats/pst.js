@@ -30,13 +30,28 @@ const pageTrailer = [
 function BTPage (id) {
     return [
         {"label":"rgentries","type":"repeater","length":488,"color":"#ff5000",count:`${id}_cEnt`,children:[
-            {label:"btkey",type:"Uint64",littleEndian:true},
-            ...BREF(id + "_rgentries[]")
+            {
+                type: "switch",
+                value: `${id}_cLevel`,
+                cases: {
+                    0: [
+                        {label:"nid",type:"Uint64",littleEndian:true},
+                        {label:"bidData",type:"Uint64",littleEndian:true},
+                        {label:"bidSub",type:"Uint64",littleEndian:true},
+                        {label:"nidParent",type:"Uint32",littleEndian:true},
+                        {label:"dwPadding",type:"bytes",length:4},
+                    ],
+                    "default": [
+                        {label:"btkey",type:"Uint64",littleEndian:true},
+                        ...BREF(id + "_rgentries[]"),
+                    ]
+                }
+            }
         ]},
         {"label":"cEnt","id":`${id}_cEnt`,"type":"Uint8","color":"#ff7000"},
         {"label":"cEntMax","type":"Uint8","color":"#ff8f00"},
         {"label":"cbEnt","type":"Uint8","color":"#ffaf00"},
-        {"label":"cLevel","type":"Uint8","color":"#ffcf00"},
+        {"label":"cLevel","id":`${id}_cLevel`,"type":"Uint8","color":"#ffcf00"},
         {"label":"dwPadding","type":"bytes","length":4,"color":"#ffef00"},
         ...pageTrailer
     ];
@@ -93,7 +108,9 @@ const template = [
     {"label":"bReserved","type":"bytes","length":1,"color":"#0020ff"},
     {"label":"rgbReserved3","type":"bytes","length":32,"color":"#2000ff"},
     {"label":"NBT Root",type:"group","start":"brefnbt_ib",children:BTPage("nbt_root")},
-    {"label":"BBT Root",type:"group","start":"brefbbt_ib",children:BTPage("bbt_root")}
+    {"label":"BBT Root",type:"group","start":"brefbbt_ib",children:BTPage("bbt_root")},
+    {"label":"NBT Page 0",type:"group","start":"nbt_root_rgentries[]_ib",children:BTPage("nbt_page0")},
+    {"label":"NBT Page 0/Page 0",type:"group","start":"nbt_page0_rgentries[]_ib",children:BTPage("nbt_page0_page0")},
 ];
 
 export default template;

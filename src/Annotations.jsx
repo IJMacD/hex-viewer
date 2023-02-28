@@ -6,7 +6,7 @@ import { ByteSize } from './ByteSize';
 
 /**
  *
- * @param {{ buffer: ArrayBuffer, annotations: object[] }} props
+ * @param {{ buffer: ArrayBuffer, annotations: import('./annotate').Annotation[] }} props
  */
 export default function Annotations ({ buffer, annotations }) {
     if (!buffer || !annotations) {
@@ -22,24 +22,24 @@ export default function Annotations ({ buffer, annotations }) {
 
                     let enumValue;
 
-                    if ((typeof data === "number" || typeof data === "bigint") && a.enum) {
-                        enumValue = a.enum[data.toString()];
+                    if ((typeof data === "number" || typeof data === "bigint") && a.template.enum) {
+                        enumValue = a.template.enum[data.toString()];
                     }
 
                     if (typeof data === "number" || typeof data === "bigint") {
-                        if (a.display === "hex") {
+                        if (a.template.display === "hex") {
                             data = `0x${data.toString(16)}`;
                         }
-                        else if (a.display === "byteSize") {
+                        else if (a.template.display === "byteSize") {
                             data = <ByteSize bytes={data} />;
                         }
-                        else if (a.display === "binary") {
+                        else if (a.template.display === "binary") {
                             const len = getAnnotationLength(a) * 8;
                             data = "0b" + data?.toString(2).padStart(len, "0");
                         }
                     }
                     else if (data instanceof ArrayBuffer) {
-                        if (a.display === "binary") {
+                        if (a.template.display === "binary") {
                             const out = [];
                             const view = new DataView(data);
                             for (let i = 0; i < data.byteLength; i++) {
@@ -82,7 +82,7 @@ export default function Annotations ({ buffer, annotations }) {
                     }
 
                     return (
-                        <li key={i} style={{ borderColor: a.color, backgroundColor: opacity(a.color, 0.5), marginLeft: a.depth*16 }}>
+                        <li key={i} style={{ borderColor: a.color, backgroundColor: opacity(a.color, 0.5), marginLeft: a.depth*16 }} title={a.id}>
                             { title }
                         </li>
                     );

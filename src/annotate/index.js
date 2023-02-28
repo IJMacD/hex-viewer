@@ -53,6 +53,7 @@ export function findFormatTemplate(buffer) {
  * @prop {number|object} [length]
  * @prop {string} [color]
  * @prop {boolean} [littleEndian]
+ * @prop {string} [display]
  * @prop {{ [value: number]: string }} [enum]
  * @prop {AnnotationTemplate[]} [children]
  * @prop {number} [count]
@@ -72,11 +73,27 @@ export function getAnnotations (template, buffer) {
     let annotations = processAnnotationTemplates(template, buffer);
 
     // Now check for unresolved annotations
+    let count = Number.POSITIVE_INFINITY;
+    while (count > 0) {
+        count = processUnresolved(annotations, buffer);
+    }
+
+    return annotations;
+}
+
+/**
+ * @param {Annotation[]} annotations
+ * @param {ArrayBuffer} buffer
+ */
+function processUnresolved(annotations, buffer) {
+    let count = 0;
+
     for (let i = 0; i < annotations.length; i++) {
         const annotation = annotations[i];
 
         if (annotation.unresolved) {
-            console.debug(`Resolving ${annotation.label} start: ${annotation.start} length: ${annotation.length}`)
+            count++;
+            console.debug(`Resolving ${annotation.label} start: ${annotation.start} length: ${annotation.length}`);
 
             const newAnnotations = processAnnotationTemplates(
                 [annotation.template],
@@ -86,13 +103,13 @@ export function getAnnotations (template, buffer) {
                 (annotation.depth || 0)
             );
 
-            annotations = [...annotations.slice(0, i), ...newAnnotations, ...annotations.slice(i + 1)];
+            annotations.splice(i, 1, ...newAnnotations);
 
             i += newAnnotations.length;
         }
     }
 
-    return annotations;
+    return count;
 }
 
 /**
@@ -125,16 +142,23 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
         };
 
         // Absolute start
-        annotation.start = (template.start ? +resolveReference(template.start, [...annotations,...outAnnotations], buffer, annotation) : relativeStart + groupOffset);
-        if (!template.length && (template.type === "ASCII" || template.type === "UTF-8")) {
-            // Find NULL terminator
-            const view = new DataView(buffer, annotation.start);
-            let length;
-            for (length = 0; length < view.byteLength && view.getUint8(length) !== 0; length++) { }
-            annotation.length = length;
+        try {
+            annotation.start = (template.start ? +resolveReference(template.start, [...annotations,...outAnnotations], buffer, annotation) : relativeStart + groupOffset);
+            if (!template.length && (template.type === "ASCII" || template.type === "UTF-8")) {
+                // Find NULL terminator
+                const view = new DataView(buffer, annotation.start);
+                let length;
+                for (length = 0; length < view.byteLength && view.getUint8(length) !== 0; length++) { }
+                annotation.length = length;
+            }
+            else {
+                annotation.length = +evaluateExpression(getAnnotationLength(template), [...annotations,...outAnnotations], buffer, annotation);
+            }
         }
-        else {
-            annotation.length = +evaluateExpression(getAnnotationLength(template), [...annotations,...outAnnotations], buffer, annotation);
+        catch (e) {
+            annotation.unresolved = true;
+            outAnnotations.push(annotation);
+            continue;
         }
 
         if (typeof template.littleEndian === "string") {
@@ -254,7 +278,7 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
             if (typeof val === "number" || typeof val === "string") {
                 const sublist = template.cases[val] || template.cases['default'];
                 if (sublist) {
-                    const newAnnotations = processAnnotationTemplates(sublist, buffer, [...annotations, ...outAnnotations], annotation.start);
+                    const newAnnotations = processAnnotationTemplates(sublist, buffer, [...annotations, ...outAnnotations], annotation.start, depth);
                     outAnnotations.push(...newAnnotations);
                 }
             }

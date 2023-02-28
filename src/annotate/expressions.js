@@ -114,6 +114,16 @@ export function resolveReference (reference, annotations, buffer, self=null) {
 
 function findAnnotation(annotations, reference) {
     // Go backwards to find most recent annotation with specific id
+    for (let i = 0; i < annotations.length; i++) {
+        if (annotations[i].id === reference) {
+            return annotations[i];
+        }
+    }
+    throw Error(`Reference not found: ${reference}`);
+}
+
+function findAnnotationReverse(annotations, reference) {
+    // Go backwards to find most recent annotation with specific id
     for (let i = annotations.length - 1; i >= 0; i--) {
         if (annotations[i].id === reference) {
             return annotations[i];

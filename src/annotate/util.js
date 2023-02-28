@@ -155,7 +155,7 @@ export function getAnnotationStyle(annotations, offset) {
 }
 
 export function getAnnotation(annotations, offset) {
-    return annotations && annotations.find(a => offset >= a.start && offset < a.start + a.length && a.type !== "group");
+    return annotations && annotations.find(a => offset >= a.start && offset < a.start + a.length && typeof a.template.children === "undefined");
 }
 
 /**
