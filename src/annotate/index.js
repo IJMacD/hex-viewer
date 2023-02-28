@@ -1,3 +1,4 @@
+import { evaluateExpression, resolveReference } from "./expressions";
 import { getAnnotationLength, getAnnotationColor, getAnnotationData } from "./util";
 
 const formats = {
@@ -76,16 +77,18 @@ export function getAnnotations (template, buffer) {
  * @param {AnnotationTemplate[]} templates
  * @param {Annotation[]} annotations
  * @param {ArrayBuffer} buffer
- * @param {number} groupStart
+ * @param {number} groupOffset
  */
-function processAnnotationTemplates(templates, annotations, buffer, groupStart=0, depth=0) {
-    let start = 0;
+function processAnnotationTemplates(templates, annotations, buffer, groupOffset=0, depth=0) {
+    /** Running position within group */
+    let relativeStart = 0;
 
     for (const template of templates) {
         /** @type {Annotation} */
         const annotation = { start: 0, length: 0, color: null, depth, ...template };
 
-        annotation.start = (template.start ? +resolveReference(template.start, annotations, buffer, annotation) : start + groupStart);
+        // Absolute start
+        annotation.start = (template.start ? +resolveReference(template.start, annotations, buffer, annotation) : relativeStart + groupOffset);
         if (!template.length && (template.type === "ASCII" || template.type === "UTF-8")) {
             // Find NULL terminator
             const view = new DataView(buffer, annotation.start);
@@ -107,33 +110,53 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
             }
             annotation.color = getAnnotationColor(template);
             annotations.push(annotation);
-            let absoluteStart = start + groupStart;
             let childCount = 0;
-            let end = absoluteStart;
+            let start = relativeStart + groupOffset;
+            // Initialise to check for movement
+            let absoluteEnd = start;
 
-            while (absoluteStart < buffer.byteLength && (typeof template.count === "undefined" || childCount < template.count)) {
-                processAnnotationTemplates(template.children, annotations, buffer, absoluteStart, depth + 1);
+            while (start < buffer.byteLength && (typeof template.count === "undefined" || childCount < template.count)) {
+                processAnnotationTemplates(template.children, annotations, buffer, start, depth + 1);
 
                 const last = annotations[annotations.length - 1];
-                end = last.start + last.length;
+                absoluteEnd = last.start + last.length;
 
-                if (end === absoluteStart) {
+                // If we haven't moved then bail
+                if (absoluteEnd === start) {
                     break;
                 }
 
-                start = end - absoluteStart;
-                absoluteStart = end;
+                // Relative
+                relativeStart = absoluteEnd - start;
+                // Absolute
+                start = absoluteEnd;
+
                 childCount++;
             }
 
-            annotation.length = end - absoluteStart;
+            // Calculated actual length of this repeater
+            const length = absoluteEnd - annotation.start;
+
+            // Check if there was an explicit fixed length
+            // If we had less than the fixed length then we'll use the explicit
+            // length. Otherwise fill in the calculated value.
+            if (typeof annotation.length === "number" && annotation.length > length) {
+                // NO op
+            }
+            else {
+                annotation.length = length;
+            }
+
+            // Move on the relative pointer
+            relativeStart = annotation.start + annotation.length - groupOffset;
+
             annotation.count = childCount;
         }
         else if (template.type === "group") {
             if (!template.children) {
                 throw Error("Expected children in the annotation");
             }
-            let absoluteStart = start + groupStart;
+            let absoluteStart = annotation.start; // start + groupStart;
             annotation.color = getAnnotationColor(template);
             annotations.push(annotation);
             processAnnotationTemplates(template.children, annotations, buffer, absoluteStart, depth + 1);
@@ -141,14 +164,15 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
             const last = annotations[annotations.length - 1];
             const end = last.start + last.length;
 
-            annotation.length = end - absoluteStart;
+            if (typeof annotation.length !== "number" || annotation.length <= 0) {
+                annotation.length = end - annotation.start;
+            }
+
+            relativeStart = annotation.start + annotation.length - groupOffset;
 
             if (end === absoluteStart) {
                 break;
             }
-
-            start = end - absoluteStart;
-            absoluteStart = end;
         }
         else if (template.type === "switch") {
             let val = null;
@@ -166,6 +190,10 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
                     processAnnotationTemplates(sublist, annotations, buffer, annotation.start);
                 }
             }
+
+            const last = annotations[annotations.length - 1];
+            // Set for next loop
+            relativeStart = last.start + last.length - groupOffset;
         } else if (template.type === "if") {
             let isTrue = null;
 
@@ -182,122 +210,17 @@ function processAnnotationTemplates(templates, annotations, buffer, groupStart=0
                     processAnnotationTemplates(sublist, annotations, buffer, annotation.start);
                 }
             }
+
+            const last = annotations[annotations.length - 1];
+            // Set for next loop
+            relativeStart = last.start + last.length - groupOffset;
         } else if (annotation.length > 0) {
             annotation.color = getAnnotationColor(template);
             annotations.push(annotation);
-        }
 
-        const last = annotations[annotations.length - 1];
-        // Set for next loop
-        start = last.start + last.length - groupStart;
-    }
-}
-
-/**
- *
- * @param {number|string|object} expr
- * @param {Annotation[]} annotations
- * @param {ArrayBuffer} buffer
- * @param {Annotation} [self]
- * @returns {number|string|boolean|ArrayBuffer}
- */
-function evaluateExpression (expr, annotations, buffer, self=null) {
-    if (typeof expr === "string") {
-        const match = /[+=-]/.exec(expr);
-        if (match) {
-            const [ left, right ] = expr.split(match[0], 2).map(s => s.trim()).map(s => evaluateExpression(s, annotations, buffer, self));
-
-            switch (match[0]) {
-                case "=":
-                    return left === right;
-                case "+":
-                    return +left + +right;
-                case "-":
-                    return +left - +right;
-            }
+            const last = annotations[annotations.length - 1];
+            // Set for next loop
+            relativeStart = last.start + last.length - groupOffset;
         }
     }
-
-    return evaluateNode(expr, annotations, buffer, self);
-}
-
-/**
- *
- * @param {number|string|object} node
- * @param {Annotation[]} annotations
- * @param {ArrayBuffer} buffer
- * @param {Annotation} [self]
- * @returns {number|string|ArrayBuffer}
- */
-function evaluateNode (node, annotations, buffer, self=null) {
-    if (typeof node === "string" && node[0] === "'" && node[node.length-1] === "'") {
-        return node.substring(1,node.length-1);
-    }
-
-    const num = +node;
-    if (!isNaN(num)) {
-        return num;
-    }
-
-    return resolveReference(node, annotations, buffer, self);
-}
-
-/**
- *
- * @param {number|string|object} reference
- * @param {Annotation[]} annotations
- * @param {ArrayBuffer} buffer
- * @param {Annotation} [self]
- * @returns {number|string|ArrayBuffer}
- */
-function resolveReference (reference, annotations, buffer, self=null) {
-    if (typeof reference === "number") {
-        return reference;
-    }
-
-    if (typeof reference === "string") {
-        const id = reference.split(":", 2);
-        const ref = id[0] ? findAnnotation(annotations, id[0]) : self;
-        const type = id[1] || "value";
-
-        if (!ref) {
-            throw Error("Cannot resolver reference: " + reference);
-        }
-
-        if (type === "value")
-            return getAnnotationData(ref, buffer);
-        if (type === "start")
-            return ref.start;
-        if (type === "length")
-            return ref.length;
-        if (type === "end")
-            return ref.start + ref.length;
-    }
-
-    if (typeof reference === "object") {
-        if (reference.operation === "relative") {
-            const ref = findAnnotation(annotations, reference.to);
-            return +getAnnotationData(ref, buffer) + ref.start;
-        }
-
-        const left = +resolveReference(reference.left, annotations, buffer);
-        const right = +resolveReference(reference.right, annotations, buffer);
-
-        switch (reference.operation) {
-            case "add":
-                return left + right;
-            case "subtract":
-                return left - right;
-        }
-    }
-}
-
-function findAnnotation(annotations, reference) {
-    // Go backwards to find most recent annotation with specific id
-    for (let i = annotations.length - 1; i >= 0; i--) {
-        if (annotations[i].id === reference) {
-            return annotations[i];
-        }
-    }
-    throw Error(`Reference not found: ${reference}`);
 }
