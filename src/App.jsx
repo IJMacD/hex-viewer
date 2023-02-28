@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import HexView from './HexView';
 import Annotations from './Annotations';
 import { findFormatTemplate, getAnnotations } from './annotate';
@@ -7,29 +7,25 @@ import TXT from './preview/TXT';
 import './App.css';
 import AnnotationEditor from './AnnotationEditor';
 
-export default class App extends React.Component {
-    constructor (props) {
-        super(props);
-
-        this.state = {
-            buffer: null,
-            format: null,
-            annotations: [],
-            error: null,
-            base64: "",
-            loading: false,
-            annotationEditMode: false,
-            template: null,
-            offsetText: "0",
-        }
-    }
+export default function App () {
+    const [ buffer, setBuffer ] = useState(null);
+    const [ format, setFormat ] = useState(null);
+    const [ annotations, setAnnotations ] = useState([]);
+    const [ base64, setBase64 ] = useState("");
+    const [ loading, setLoading ] = useState(false);
+    const [ annotationEditMode, setAnnotationEditMode ] = useState(false);
+    const [ template, setTemplate ] = useState(null);
+    const [ offsetText, setOffsetText ] = useState("0");
 
     /** @param {import('react').SyntheticEvent<HTMLInputElement>} e */
-    handleFileChange (e) {
+    function handleFileChange (e) {
         const files = e.currentTarget.files;
 
         if (files.length) {
-            this.setState({ buffer: null, format: null, annotation: null, loading: true });
+            setBuffer(null);
+            setFormat(null);
+            setAnnotations(null);
+            setLoading(true);
 
             const reader = new FileReader();
 
@@ -38,16 +34,17 @@ export default class App extends React.Component {
 
                 const buffer = e.target.result;
 
-                this.setState({ buffer, loading: false });
+                setBuffer(buffer);
+                setLoading(false);
             });
 
             reader.readAsArrayBuffer(files[0]);
         }
     }
 
-    handleBase64Change (e) {
+    function handleBase64Change (e) {
         const base64 = e.target.value;
-        this.setState({ base64 });
+        setBase64(base64);
         try {
             const decoded = atob(base64);
             const buffer = new ArrayBuffer(decoded.length);
@@ -55,96 +52,79 @@ export default class App extends React.Component {
             for (let i = 0; i < decoded.length; i++) {
                 view.setUint8(i, decoded.charCodeAt(i));
             }
-            this.setState({ buffer });
+            setBuffer(buffer);
         } catch (e) {}
     }
 
-    componentDidUpdate (oldProps, oldState) {
-        if (oldState.buffer !== this.state.buffer && this.state.buffer) {
-            const template = findFormatTemplate(this.state.buffer);
-            this.setState({ template });
+    useEffect(() => {
+        if (buffer) {
+            const template = findFormatTemplate(buffer);
+            setTemplate(template);
         }
 
-        if (oldState.buffer !== this.state.buffer || oldState.template !== this.state.template) {
-
-            if (this.state.buffer && this.state.template) {
-                const annotations = getAnnotations(this.state.template, this.state.buffer);
-                this.setState({ annotations });
-            }
-
+        if (buffer && template) {
+            const annotations = getAnnotations(template, buffer);
+            setAnnotations(annotations);
         }
+
+    }, [buffer, template]);
+
+    const byteLimit = 1024;
+    const offset = parseInt(offsetText) || 0;
+    let preview;
+
+    if (format === "BMP") {
+        preview = <BMP buffer={buffer} />;
+    }
+    else {
+        preview = <TXT buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />;
     }
 
-    componentDidCatch (error) {
-        this.setState({ error });
-    }
-
-    render () {
-        const { buffer, annotations, base64, loading, annotationEditMode, template, offsetText } = this.state;
-        const byteLimit = 1024;
-        const offset = parseInt(offsetText) || 0;
-        let preview;
-
-        const setOffsetText = (offsetText) => {
-            this.setState({ offsetText });
-        };
-
-        if (this.state.error) {
-            preview = <p>Error: { this.state.error.message }</p>;
-        }
-        else if (this.state.format === "BMP") {
-            preview = <BMP buffer={buffer} />;
-        }
-        else {
-            preview = <TXT buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />;
-        }
-
-        return (
-            <div className="App">
-                <div className="input">
-                    <label>File Input<br/>
-                        <input type="file" id="file-input" onChange={this.handleFileChange.bind(this)} />
-                    </label>
-                    <label>Base64 Input<br/>
-                        <textarea value={base64} onChange={this.handleBase64Change.bind(this)} />
-                    </label>
-                    <div>
-                        <button onClick={() => this.setState({ annotationEditMode: !annotationEditMode })}>
-                            Edit Annotations
-                        </button>
-                    </div>
-                </div>
-                <div className="App-panels">
-                    { loading && <p>Loading...</p> }
-                    { buffer &&
-                        <div style={{ flex: 1 }}>
-                            <h1>Hex</h1>
-                            <div>
-                                <button onClick={() => setOffsetText((offset - byteLimit).toString())} disabled={offset < byteLimit}>&lt;</button>
-                                <input value={offset} onChange={e => setOffsetText(e.target.value)} />
-                                <button onClick={() => setOffsetText((offset + byteLimit).toString())}>&gt;</button>
-                            </div>
-                            <div style={{ display: 'flex' }}>
-                                <HexView buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />
-                                {preview}
-                            </div>
-                        </div>
-                    }
-                    { annotations && annotations.length > 0 &&
-                        <div style={{  }}>
-                            <h1>Annotations</h1>
-                            <Annotations buffer={buffer} annotations={annotations} />
-                        </div>
-                    }
-                    {
-                        annotationEditMode &&
-                        <div style={{  }}>
-                            <h1>Template Editor</h1>
-                            <AnnotationEditor template={template} setTemplate={template => this.setState({ template, annotations: getAnnotations(template, buffer) })} />
-                        </div>
-                    }
+    return (
+        <div className="App">
+            <div className="input">
+                <label>File Input<br/>
+                    <input type="file" id="file-input" onChange={handleFileChange} />
+                </label>
+                <label>Base64 Input<br/>
+                    <textarea value={base64} onChange={handleBase64Change} />
+                </label>
+                <div>
+                    <button onClick={() => setAnnotationEditMode(m => !m)}>
+                        Edit Annotations
+                    </button>
                 </div>
             </div>
-        )
-    }
+            <div className="App-panels">
+                { loading && <p>Loading...</p> }
+                { buffer &&
+                    <div style={{ flex: 1 }}>
+                        <h1>Hex</h1>
+                        <div>
+                            <button onClick={() => setOffsetText((offset - byteLimit).toString())} disabled={offset < byteLimit}>&lt;</button>
+                            <input value={offset} onChange={e => setOffsetText(e.target.value)} />
+                            <button onClick={() => setOffsetText((offset + byteLimit).toString())}>&gt;</button>
+                        </div>
+                        <div style={{ display: 'flex' }}>
+                            <HexView buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />
+                            {preview}
+                        </div>
+                    </div>
+                }
+                { annotations && annotations.length > 0 &&
+                    <div style={{  }}>
+                        <h1>Annotations</h1>
+                        <Annotations buffer={buffer} annotations={annotations} />
+                    </div>
+                }
+                {
+                    annotationEditMode &&
+                    <div style={{  }}>
+                        <h1>Template Editor</h1>
+                        <AnnotationEditor template={template} setTemplate={template => { setTemplate(template); setAnnotations(getAnnotations(template, buffer)); }} />
+                    </div>
+                }
+            </div>
+        </div>
+    );
 }

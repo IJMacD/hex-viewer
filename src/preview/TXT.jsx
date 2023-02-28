@@ -5,7 +5,7 @@ import { getAnnotation, getAnnotationStyle } from '../annotate/util';
 
 /**
  *
- * @param {{ buffer: ArrayBuffer, annotations: import('../annotate').Annotation[], offset?: number, byteLimit?: number }} props
+ * @param {{ buffer: ArrayBuffer, annotations: import('../annotate').Annotation[]?, offset?: number, byteLimit?: number }} props
  */
 export default function TXT ({ buffer, annotations, offset = 0, byteLimit = 1024 }) {
     if (!buffer) {
@@ -22,7 +22,9 @@ export default function TXT ({ buffer, annotations, offset = 0, byteLimit = 1024
         lines.push(line);
     }
 
-    const asciiAnnotations = annotations.filter(a => a.type === "ASCII" || a.type === "UTF-8");
+    const asciiAnnotations = annotations ?
+        annotations.filter(a => a.type === "ASCII" || a.type === "UTF-8")
+        : [];
 
     return (
         <table className="TXTPreview">
