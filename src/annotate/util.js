@@ -155,7 +155,10 @@ export function getAnnotationStyle(annotations, offset) {
 }
 
 export function getAnnotation(annotations, offset) {
-    return annotations && annotations.find(a => offset >= a.start && offset < a.start + a.length && typeof a.template.children === "undefined");
+    if (!annotations) return undefined;
+    const leafMatch = annotations.find(a => offset >= a.start && offset < a.start + a.length && typeof a.template.children === "undefined");
+    if (leafMatch) return leafMatch;
+    return annotations.find(a => offset >= a.start && offset < a.start + a.length);
 }
 
 /**

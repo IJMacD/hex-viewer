@@ -108,6 +108,10 @@ export function resolveReference (reference, annotations, buffer, self=null) {
                 return left + right;
             case "subtract":
                 return left - right;
+            case "nextMultiple": {
+                const diff = right - (left % right)
+                return left + diff;
+            }
         }
     }
 }

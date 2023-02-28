@@ -6,9 +6,12 @@ import { ByteSize } from './ByteSize';
 
 /**
  *
- * @param {{ buffer: ArrayBuffer, annotations: import('./annotate').Annotation[] }} props
+ * @param {object} props
+ * @param {ArrayBuffer} props.buffer
+ * @param {import('./annotate').Annotation[]} props.annotations
+ * @param {(offset: number) => void} props.setOffset
  */
-export default function Annotations ({ buffer, annotations }) {
+export default function Annotations ({ buffer, annotations, setOffset }) {
     if (!buffer || !annotations) {
         return null;
     }
@@ -36,6 +39,10 @@ export default function Annotations ({ buffer, annotations }) {
                         else if (a.template.display === "binary") {
                             const len = getAnnotationLength(a) * 8;
                             data = "0b" + data?.toString(2).padStart(len, "0");
+                        }
+                        else if (a.template.display === "fileOffset") {
+                            const offset = typeof data === "number" ? data : JSON.parse(data.toString());
+                            data = <span style={{cursor:"pointer",color:"blue",textDecoration:"underline"}} onClick={e => {e.stopPropagation();setOffset(offset);}}>0x{data.toString(16)}</span>
                         }
                     }
                     else if (data instanceof ArrayBuffer) {
@@ -82,7 +89,16 @@ export default function Annotations ({ buffer, annotations }) {
                     }
 
                     return (
-                        <li key={i} style={{ borderColor: a.color, backgroundColor: opacity(a.color, 0.5), marginLeft: a.depth*16 }} title={a.id}>
+                        <li
+                            key={i}
+                            style={{
+                                borderColor: a.color,
+                                backgroundColor: opacity(a.color, 0.5),
+                                marginLeft: (a.depth||0)*16
+                            }}
+                            onClick={() => setOffset(a.start)}
+                            title={a.id}
+                        >
                             { title }
                         </li>
                     );

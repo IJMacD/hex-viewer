@@ -16,13 +16,15 @@ const pageEnum = {
     0x86: "ptypeDL",
 };
 
-const pageTrailer = [
-    {"label":"ptype","type":"Uint8","display":"hex","color":"#efff00","enum":pageEnum},
-    {"label":"ptypeRepeat","type":"Uint8","display":"hex","color":"#cfff00","enum":pageEnum},
-    {"label":"wSig","type":"Uint16","littleEndian":true,"color":"#afff00"},
-    {"label":"dwCRC","type":"bytes","length":4,"color":"#8fff00"},
-    {"label":"bid","type":"Uint64","littleEndian":true,"color":"#70ff00"}
-];
+function pageTrailer (id) {
+    return [
+        {"label":"ptype","id":`${id}_ptype`,"type":"Uint8","display":"hex","color":"#efff00","enum":pageEnum},
+        {"label":"ptypeRepeat","type":"Uint8","display":"hex","color":"#cfff00","enum":pageEnum},
+        {"label":"wSig","type":"Uint16","littleEndian":true,"color":"#afff00"},
+        {"label":"dwCRC","type":"bytes","length":4,"color":"#8fff00"},
+        {"label":"bid","type":"Uint64","littleEndian":true,"color":"#70ff00"}
+    ];
+}
 
 /**
  * @param {string} id
@@ -35,11 +37,25 @@ function BTPage (id) {
                 value: `${id}_cLevel`,
                 cases: {
                     0: [
-                        {label:"nid",type:"Uint64",littleEndian:true},
-                        {label:"bidData",type:"Uint64",littleEndian:true},
-                        {label:"bidSub",type:"Uint64",littleEndian:true},
-                        {label:"nidParent",type:"Uint32",littleEndian:true},
-                        {label:"dwPadding",type:"bytes",length:4},
+                        {
+                            type: "switch",
+                            value: `${id}_ptype`,
+                            cases: {
+                                0x80: [
+                                    ...BREF(id),
+                                    {label:"cb",id:`${id}_rgentries[]_cb`,type:"Uint16",littleEndian:true,display:"byteSize"},
+                                    {label:"cRef",type:"Uint16",littleEndian:true},
+                                    {label:"dwPadding",type:"bytes",length:4},
+                                ],
+                                0x81: [
+                                    {label:"nid",type:"Uint64",littleEndian:true},
+                                    {label:"bidData",type:"Uint64",littleEndian:true},
+                                    {label:"bidSub",type:"Uint64",littleEndian:true},
+                                    {label:"nidParent",type:"Uint32",littleEndian:true},
+                                    {label:"dwPadding",type:"bytes",length:4},
+                                ]
+                            }
+                        }
                     ],
                     "default": [
                         {label:"btkey",type:"Uint64",littleEndian:true},
@@ -53,7 +69,7 @@ function BTPage (id) {
         {"label":"cbEnt","type":"Uint8","color":"#ffaf00"},
         {"label":"cLevel","id":`${id}_cLevel`,"type":"Uint8","color":"#ffcf00"},
         {"label":"dwPadding","type":"bytes","length":4,"color":"#ffef00"},
-        ...pageTrailer
+        ...pageTrailer(id)
     ];
 }
 
@@ -63,7 +79,7 @@ function BTPage (id) {
 function BREF(id) {
     return [
         {"label":"bid","type":"Uint64","littleEndian":true,"color":"#ff00bf"},
-        {"label":"ib","id":`${id}_ib`,"type":"Uint64","littleEndian":true,"color":"#ff0020"}
+        {"label":"ib","id":`${id}_ib`,"type":"Uint64","littleEndian":true,"color":"#ff0020",display:"fileOffset"}
     ];
 }
 
@@ -111,6 +127,16 @@ const template = [
     {"label":"BBT Root",type:"group","start":"brefbbt_ib",children:BTPage("bbt_root")},
     {"label":"NBT Page 0",type:"group","start":"nbt_root_rgentries[]_ib",children:BTPage("nbt_page0")},
     {"label":"NBT Page 0/Page 0",type:"group","start":"nbt_page0_rgentries[]_ib",children:BTPage("nbt_page0_page0")},
+    {"label":"BBT Page 0",type:"group","start":"bbt_root_rgentries[]_ib",children:BTPage("bbt_page0")},
+    {"label":"BBT Page 0/Page 0",type:"group","start":"bbt_page0_rgentries[]_ib",children:BTPage("bbt_page0_page0")},
+    {"label":"BBT Page 0/Page 0/Block 0",type:"group","start":"bbt_page0_page0_ib",children:[
+        {label:"data",type:"bytes",length:"bbt_page0_page0_rgentries[]_cb"},
+        {label:"padding",type:"bytes",length:{operation:"subtract",left:{operation:"subtract",left:{operation:"nextMultiple",left:"bbt_page0_page0_rgentries[]_cb",right:64},right:"bbt_page0_page0_rgentries[]_cb"},right:16}},
+        {label:"cb",type:"Uint16",littleEndian:true,display:"byteSize"},
+        {label:"wSig",type:"Uint16",littleEndian:true},
+        {label:"dwCRC",type:"bytes",length:4},
+        {label:"bid",type:"Uint64",littleEndian:true},
+    ]},
 ];
 
 export default template;

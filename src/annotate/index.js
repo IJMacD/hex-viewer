@@ -74,8 +74,15 @@ export function getAnnotations (template, buffer) {
 
     // Now check for unresolved annotations
     let count = Number.POSITIVE_INFINITY;
+    let prev = count;
     while (count > 0) {
         count = processUnresolved(annotations, buffer);
+
+        // if (prev === count) {
+        //     throw Error(`Unable to resolve all annotations: ${count} still not resolved`);
+        // }
+
+        // prev = count;
     }
 
     return annotations;
@@ -316,7 +323,8 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
             relativeStart = last.start + last.length - groupOffset;
         }
 
-        console.debug(`Added [${annotation.label}] start: ${annotation.start} length: ${annotation.length}`);
+        const lbl = typeof annotation.label === "string" ? `[${annotation.label}]` : `<${annotation.type}>`;
+        console.debug(`Added ${lbl} start: ${annotation.start} length: ${annotation.length}`);
     }
 
     return outAnnotations;

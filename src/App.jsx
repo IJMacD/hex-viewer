@@ -70,7 +70,7 @@ export default function App () {
     }, [buffer, template]);
 
     const byteLimit = 1024;
-    const offset = parseInt(offsetText) || 0;
+    const offset = parseInt(offsetText, 16) || 0;
     let preview;
 
     if (format === "BMP") {
@@ -101,9 +101,9 @@ export default function App () {
                     <div style={{ flex: 1 }}>
                         <h1>Hex</h1>
                         <div>
-                            <button onClick={() => setOffsetText((offset - byteLimit).toString())} disabled={offset < byteLimit}>&lt;</button>
-                            <input value={offset} onChange={e => setOffsetText(e.target.value)} />
-                            <button onClick={() => setOffsetText((offset + byteLimit).toString())}>&gt;</button>
+                            <button onClick={() => setOffsetText((offset - byteLimit).toString(16))} disabled={offset < byteLimit}>&lt;</button>
+                            0x<input value={offset.toString(16)} onChange={e => setOffsetText(e.target.value)} />
+                            <button onClick={() => setOffsetText((offset + byteLimit).toString(16))}>&gt;</button>
                         </div>
                         <div style={{ display: 'flex' }}>
                             <HexView buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />
@@ -114,7 +114,7 @@ export default function App () {
                 { annotations && annotations.length > 0 &&
                     <div style={{  }}>
                         <h1>Annotations</h1>
-                        <Annotations buffer={buffer} annotations={annotations} />
+                        <Annotations buffer={buffer} annotations={annotations} setOffset={offset => setOffsetText(offset.toString(16))} />
                     </div>
                 }
                 {
