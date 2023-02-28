@@ -1,3 +1,25 @@
-.AnnotationEditor label {
+.AnnotationEditor {
+    padding: 0.25em;
+}
+
+.AnnotationEditor-Annotation {
+    border: 1px solid #ccc;
+    padding: 4px;
+    padding-top: 32px;
+    position: relative;
+}
+
+.AnnotationEditor-EditAnnotation {
+    padding: 0.25em;
+    border: 1px dashed #999;
+}
+
+.AnnotationEditor-EditAnnotation label {
     display: block;
+    margin-bottom: 0.25em;
+}
+
+.AnnotationEditor-EditAnnotation span {
+    display: inline-block;
+    width: 150px;
 }
