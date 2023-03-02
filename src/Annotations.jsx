@@ -3,6 +3,7 @@ import './Annotations.css';
 import { getAnnotationData, getAnnotationLength } from './annotate/util';
 import { opacity } from './util';
 import { ByteSize } from './ByteSize';
+import { CryptPermute } from './outlook/permute';
 
 /**
  *
@@ -54,6 +55,16 @@ export default function Annotations ({ buffer, annotations, setOffset }) {
                             }
                             data = `0b${out.join("")}`;
                         }
+                        else if (a.template.display === "permute") {
+                            CryptPermute(data, data.byteLength, false);
+
+                            const out = [];
+                            const view = new DataView(data);
+                            for (let i = 0; i < data.byteLength; i++) {
+                                out.push(view.getUint8(i).toString(16).padStart(2,"0"));
+                            }
+                            data = <><code style={{display:"block"}}>{out.join(" ")}</code>{String.fromCharCode(...new Uint16Array(data))}</>;
+                        }
                         else if (data.byteLength < 10) {
                             const out = [];
                             const view = new DataView(data);
@@ -88,12 +99,23 @@ export default function Annotations ({ buffer, annotations, setOffset }) {
                         title = <>{title} <code style={{color: "#333"}}>{enumValue}</code></>;
                     }
 
+                    let backgroundColor = a.color;
+                    if (backgroundColor.startsWith("#")) {
+                        backgroundColor = opacity(backgroundColor, 0.5);
+                    }
+                    else if (backgroundColor.startsWith("hsl(")) {
+                        const match = /hsl\((\d+)deg, (\d+)%, (\d+)%\)/.exec(backgroundColor);
+                        if (match) {
+                            backgroundColor = `hsl(${match[1]}deg, ${match[2]}%, ${+match[3] + 25}%)`;
+                        }
+                    }
+
                     return (
                         <li
                             key={i}
                             style={{
                                 borderColor: a.color,
-                                backgroundColor: opacity(a.color, 0.5),
+                                backgroundColor,
                                 marginLeft: (a.depth||0)*16
                             }}
                             onClick={() => setOffset(a.start)}

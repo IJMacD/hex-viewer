@@ -114,7 +114,7 @@ export default function App () {
                 { annotations && annotations.length > 0 &&
                     <div style={{  }}>
                         <h1>Annotations</h1>
-                        <Annotations buffer={buffer} annotations={annotations} setOffset={offset => setOffsetText(offset.toString(16))} />
+                        <Annotations buffer={buffer} annotations={annotations} setOffset={offset => setOffsetText((Math.floor(offset/16)*16).toString(16))} />
                     </div>
                 }
                 {

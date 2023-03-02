@@ -75,14 +75,21 @@ export function getAnnotations (template, buffer) {
     // Now check for unresolved annotations
     let count = Number.POSITIVE_INFINITY;
     let prev = count;
+    let retry = 10;
     while (count > 0) {
         count = processUnresolved(annotations, buffer);
 
-        // if (prev === count) {
-        //     throw Error(`Unable to resolve all annotations: ${count} still not resolved`);
-        // }
+        if (prev === count) {
+            if (retry-- < 0) {
+                // throw Error(`Unable to resolve all annotations: ${count} still not resolved`);
+                break;
+            }
+        }
+        else {
+            retry = 10;
+        }
 
-        // prev = count;
+        prev = count;
     }
 
     return annotations;

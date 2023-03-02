@@ -25,7 +25,7 @@ export function getAnnotationLength (annotation) {
 
 export function getAnnotationColor (template) {
     if (!template.color) {
-        template.color = deterministicColor();
+        template.color = deterministicColorB();
     }
 
     return template.color;
@@ -33,7 +33,7 @@ export function getAnnotationColor (template) {
 
 let theta = 240;
 let hue = 0;
-function deterministicColor() {
+function deterministicColorA() {
     const rgb = hslToRgb(hue / 360, 1, 0.5);
 
     hue += Math.min(120, theta);
@@ -44,6 +44,13 @@ function deterministicColor() {
     }
 
     return "#" + rgb.map(c => c.toString(16).padStart(2, "0")).join("");
+}
+
+let colourIndex = 0;
+const thetaDelta = 57;
+function deterministicColorB () {
+    const hue = (colourIndex++ * thetaDelta) % 360;
+    return `hsl(${hue}deg, 100%, 50%)`;
 }
 
 /**
@@ -142,10 +149,21 @@ export function getAnnotationStyle(annotations, offset) {
     const style = {};
     const a = getAnnotation(annotations, offset);
     if (a) {
+        let backgroundColor = a.color;
+        if (backgroundColor.startsWith("#")) {
+            backgroundColor = opacity(backgroundColor, 0.5);
+        }
+        else if (backgroundColor.startsWith("hsl(")) {
+            const match = /hsl\((\d+)deg, (\d+)%, (\d+)%\)/.exec(backgroundColor);
+            if (match) {
+                backgroundColor = `hsl(${match[1]}deg, ${match[2]}%, ${+match[3] + 25}%)`;
+            }
+        }
+
         const end = a.start + a.length - 1;
         style.borderStyle = "solid";
         style.borderWidth = 1;
-        style.backgroundColor = opacity(a.color, 0.5);
+        style.backgroundColor = backgroundColor;
         style.borderLeftColor = (offset === a.start || offset % 16 === 0) ? a.color : "transparent";
         style.borderRightColor = (offset === end || offset % 16 === 15) ? a.color : "transparent";
         style.borderTopColor = (Math.floor(offset / 16) == Math.floor(a.start / 16)) ? a.color : "transparent";
