@@ -1,7 +1,72 @@
+import { PSTEntryID, PSTFile, PSTNBTEntry, PSTPropertyContext } from "../../outlook/parser";
 import { markerMatch } from "../util";
 
+/**
+ * @param {ArrayBuffer} buffer
+ */
 export function magic (buffer) {
     if (markerMatch(buffer, "!BDN")) {
+
+        try {
+            const pst = new PSTFile(buffer);
+
+            console.log("Root Folder NID: " + PSTFile.NID_ROOT_FOLDER);
+
+            const rootFolderPropertyContext = pst.getRootFolder();
+            if (rootFolderPropertyContext) {
+                console.log(rootFolderPropertyContext.keys);
+                const name = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME);
+                console.log("Display Name: " + name);
+                const count = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_COUNT);
+                console.log("Content Count: " + count);
+                const unreadCount = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_UNREAD_COUNT);
+                console.log("Content Unread Count: " + unreadCount);
+                const subfolders = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_SUBFOLDERS);
+                console.log("Subfolders: " + (subfolders ? "yes" : "no"));
+            }
+
+            const messageStore = pst.getMessageStore();
+            if (messageStore) {
+                const displayNameRecord = messageStore.getPCRecordByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME);
+                if (displayNameRecord?.wPropType === PSTPropertyContext.PTYPE_STRING) {
+                    if (PSTNBTEntry.getNIDType(displayNameRecord.dwValueHnid) === PSTNBTEntry.NID_TYPE_HID) {
+                        const data = messageStore.getItemByHID(displayNameRecord.dwValueHnid);
+                        const string = String.fromCharCode(...new Uint16Array(data));
+                        console.log("Display name: " + string);
+                    }
+                }
+
+                const rootFolderRecord = messageStore.getPCRecordByKey(PSTPropertyContext.PID_TAG_ROOT_MAILBOX);
+                if (rootFolderRecord?.wPropType === PSTPropertyContext.PTYPE_BINARY) {
+                    // console.log(rootFolderRecord);
+                    if (PSTNBTEntry.getNIDType(rootFolderRecord.dwValueHnid) === PSTNBTEntry.NID_TYPE_HID) {
+                        const entryData = messageStore.getItemByHID(rootFolderRecord.dwValueHnid);
+                        // console.log(new Uint8Array(data));
+                        const entry = new PSTEntryID(entryData);
+                        console.log("Root Folder NID: " + entry.nid);
+                        const node = pst.getNode(entry.nid);
+
+                        const data = pst.getData(node.bidData);
+                        if (data) {
+                            const rootFolderPropertyContext = new PSTPropertyContext(data);
+                            console.log(rootFolderPropertyContext.keys);
+                            const name = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME);
+                            console.log("Display Name: " + name);
+                            const count = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_COUNT);
+                            console.log("Content Count: " + count);
+                            const unreadCount = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_UNREAD_COUNT);
+                            console.log("Content Unread Count: " + unreadCount);
+                            const subfolders = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_SUBFOLDERS);
+                            console.log("Subfolders: " + (subfolders ? "yes" : "no"));
+                        }
+                    }
+                }
+            }
+        }
+        catch (e) {
+            console.error(e);
+        }
+
         return template;
     }
 }
@@ -83,6 +148,17 @@ function BREF(id) {
     ];
 }
 
+function Block (length) {
+    return [
+        {label:"data",type:"bytes",length,display:"permute"},
+        {label:"padding",type:"bytes",length:{operation:"subtract",left:{operation:"subtract",left:{operation:"nextMultiple",left:length,right:64},right:length},right:16}},
+        {label:"cb",type:"Uint16",littleEndian:true,display:"byteSize"},
+        {label:"wSig",type:"Uint16",littleEndian:true},
+        {label:"dwCRC",type:"bytes",length:4},
+        {label:"bid",type:"Uint64",littleEndian:true},
+    ];
+}
+
 const template = [
     {"label":"Magic","type":"ASCII","start":0,"length":4,"color":"#ff0000"},
     {"label":"CRC","type":"bytes","length":4,"color":"#00ff00"},
@@ -129,14 +205,7 @@ const template = [
     {"label":"NBT Page 0/Page 0",type:"group","start":"nbt_page0_rgentries[]_ib",children:BTPage("nbt_page0_page0")},
     {"label":"BBT Page 0",type:"group","start":"bbt_root_rgentries[]_ib",children:BTPage("bbt_page0")},
     {"label":"BBT Page 0/Page 0",type:"group","start":"bbt_page0_rgentries[]_ib",children:BTPage("bbt_page0_page0")},
-    {"label":"BBT Page 0/Page 0/Block 0",type:"group","start":"bbt_page0_page0_ib",children:[
-        {label:"data",type:"bytes",length:"bbt_page0_page0_rgentries[]_cb"},
-        {label:"padding",type:"bytes",length:{operation:"subtract",left:{operation:"subtract",left:{operation:"nextMultiple",left:"bbt_page0_page0_rgentries[]_cb",right:64},right:"bbt_page0_page0_rgentries[]_cb"},right:16}},
-        {label:"cb",type:"Uint16",littleEndian:true,display:"byteSize"},
-        {label:"wSig",type:"Uint16",littleEndian:true},
-        {label:"dwCRC",type:"bytes",length:4},
-        {label:"bid",type:"Uint64",littleEndian:true},
-    ]},
+    {"label":"BBT Page 0/Page 0/Block 172",type:"group","start":0x5c40,children:Block(284)},
 ];
 
 export default template;
