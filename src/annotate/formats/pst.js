@@ -10,56 +10,79 @@ export function magic (buffer) {
         try {
             const pst = new PSTFile(buffer);
 
-            console.log("Root Folder NID: " + PSTFile.NID_ROOT_FOLDER);
+            // console.log("Root Folder NID: " + PSTFile.NID_ROOT_FOLDER);
 
-            const rootFolderPropertyContext = pst.getRootFolder();
-            if (rootFolderPropertyContext) {
-                console.log(rootFolderPropertyContext.keys);
-                const name = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME);
-                console.log("Display Name: " + name);
-                const count = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_COUNT);
-                console.log("Content Count: " + count);
-                const unreadCount = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_UNREAD_COUNT);
-                console.log("Content Unread Count: " + unreadCount);
-                const subfolders = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_SUBFOLDERS);
-                console.log("Subfolders: " + (subfolders ? "yes" : "no"));
-            }
+            // const rootFolderPropertyContext = pst.getRootFolder();
+            // if (rootFolderPropertyContext) {
+            //     console.log(rootFolderPropertyContext.keys);
+            //     const name = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME);
+            //     console.log("Display Name: " + name);
+            //     const count = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_COUNT);
+            //     console.log("Content Count: " + count);
+            //     const unreadCount = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_UNREAD_COUNT);
+            //     console.log("Content Unread Count: " + unreadCount);
+            //     const subfolders = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_SUBFOLDERS);
+            //     console.log("Subfolders: " + (subfolders ? "yes" : "no"));
+            // }
 
-            const messageStore = pst.getMessageStore();
-            if (messageStore) {
-                const displayNameRecord = messageStore.getPCRecordByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME);
-                if (displayNameRecord?.wPropType === PSTPropertyContext.PTYPE_STRING) {
-                    if (PSTNBTEntry.getNIDType(displayNameRecord.dwValueHnid) === PSTNBTEntry.NID_TYPE_HID) {
-                        const data = messageStore.getItemByHID(displayNameRecord.dwValueHnid);
-                        const string = String.fromCharCode(...new Uint16Array(data));
-                        console.log("Display name: " + string);
+            // const messageStore = pst.getMessageStore();
+            // if (messageStore) {
+            //     const displayNameRecord = messageStore.getPCRecordByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME);
+            //     if (displayNameRecord?.wPropType === PSTPropertyContext.PTYPE_STRING) {
+            //         if (PSTNBTEntry.getNIDType(displayNameRecord.dwValueHnid) === PSTNBTEntry.NID_TYPE_HID) {
+            //             const data = messageStore.getItemByHID(displayNameRecord.dwValueHnid);
+            //             const string = String.fromCharCode(...new Uint16Array(data));
+            //             console.log("Display name: " + string);
+            //         }
+            //     }
+
+            //     const rootFolderRecord = messageStore.getPCRecordByKey(PSTPropertyContext.PID_TAG_ROOT_MAILBOX);
+            //     if (rootFolderRecord?.wPropType === PSTPropertyContext.PTYPE_BINARY) {
+            //         // console.log(rootFolderRecord);
+            //         if (PSTNBTEntry.getNIDType(rootFolderRecord.dwValueHnid) === PSTNBTEntry.NID_TYPE_HID) {
+            //             const entryData = messageStore.getItemByHID(rootFolderRecord.dwValueHnid);
+            //             // console.log(new Uint8Array(data));
+            //             const entry = new PSTEntryID(entryData);
+            //             console.log("Root Folder NID: " + entry.nid);
+            //             const node = pst.getNode(entry.nid);
+
+            //             const data = pst.getData(node.bidData);
+            //             if (data) {
+            //                 const rootFolderPropertyContext = new PSTPropertyContext(data);
+            //                 console.log(rootFolderPropertyContext.keys);
+            //                 const name = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME);
+            //                 console.log("Display Name: " + name);
+            //                 const count = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_COUNT);
+            //                 console.log("Content Count: " + count);
+            //                 const unreadCount = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_UNREAD_COUNT);
+            //                 console.log("Content Unread Count: " + unreadCount);
+            //                 const subfolders = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_SUBFOLDERS);
+            //                 console.log("Subfolders: " + (subfolders ? "yes" : "no"));
+            //             }
+            //         }
+            //     }
+            // }
+            const nodeKeys = pst.rootNBTPage.getAllKeys();
+            for (const key of nodeKeys) {
+                if (PSTNBTEntry.getNIDType(key) === PSTNBTEntry.NID_TYPE_NORMAL_MESSAGE) {
+                    const node = pst.getNode(key);
+                    // console.log(`Parent: ${node.nidParent} NID Type: ${PSTNBTEntry.getNIDType(node.nidParent)}`);
+                    // const parentNode = pst.getNode(node.nidParent);
+                    // const parentPC = pst.getPropertyContext(parentNode.bidData);
+                    // console.log(`Parent Name: ${parentPC?.getPCValueByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME)}`);
+
+                    const pc = pst.getPropertyContext(node.bidData);
+                    if (pc) {
+                        // for (const record of pc.getAllPCRecords()) {
+                        //     console.log(record);
+                        // }
+                        console.log(`Subject: ${pc.getPCValueByKey(PSTPropertyContext.PID_TAG_SUBJECT)}`);
+                        // console.log(pc.getPCValueByKey(PSTPropertyContext.PID_TAG_BODY));
+                        // const html = pc.getPCValueByKey(PSTPropertyContext.PID_TAG_BODY_HTML);
+                        // console.log(String.fromCharCode(...new Uint8Array(html)));
                     }
-                }
 
-                const rootFolderRecord = messageStore.getPCRecordByKey(PSTPropertyContext.PID_TAG_ROOT_MAILBOX);
-                if (rootFolderRecord?.wPropType === PSTPropertyContext.PTYPE_BINARY) {
-                    // console.log(rootFolderRecord);
-                    if (PSTNBTEntry.getNIDType(rootFolderRecord.dwValueHnid) === PSTNBTEntry.NID_TYPE_HID) {
-                        const entryData = messageStore.getItemByHID(rootFolderRecord.dwValueHnid);
-                        // console.log(new Uint8Array(data));
-                        const entry = new PSTEntryID(entryData);
-                        console.log("Root Folder NID: " + entry.nid);
-                        const node = pst.getNode(entry.nid);
-
-                        const data = pst.getData(node.bidData);
-                        if (data) {
-                            const rootFolderPropertyContext = new PSTPropertyContext(data);
-                            console.log(rootFolderPropertyContext.keys);
-                            const name = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME);
-                            console.log("Display Name: " + name);
-                            const count = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_COUNT);
-                            console.log("Content Count: " + count);
-                            const unreadCount = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_CONTENT_UNREAD_COUNT);
-                            console.log("Content Unread Count: " + unreadCount);
-                            const subfolders = rootFolderPropertyContext.getPCValueByKey(PSTPropertyContext.PID_TAG_SUBFOLDERS);
-                            console.log("Subfolders: " + (subfolders ? "yes" : "no"));
-                        }
-                    }
+                    // break;
                 }
             }
         }
