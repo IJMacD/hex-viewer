@@ -1,4 +1,4 @@
-import { PSTEntryID, PSTFile, PSTNBTEntry, PSTPropertyContext } from "../../outlook/parser";
+import * as PST from "../../pst";
 import { markerMatch } from "../util";
 
 /**
@@ -8,7 +8,7 @@ export function magic (buffer) {
     if (markerMatch(buffer, "!BDN")) {
 
         try {
-            const pst = new PSTFile(buffer);
+            const pst = new PST.File(buffer);
 
             // console.log("Root Folder NID: " + PSTFile.NID_ROOT_FOLDER);
 
@@ -62,28 +62,27 @@ export function magic (buffer) {
             //         }
             //     }
             // }
-            const nodeKeys = pst.rootNBTPage.getAllKeys();
-            for (const key of nodeKeys) {
-                if (PSTNBTEntry.getNIDType(key) === PSTNBTEntry.NID_TYPE_NORMAL_MESSAGE) {
-                    const node = pst.getNode(key);
-                    // console.log(`Parent: ${node.nidParent} NID Type: ${PSTNBTEntry.getNIDType(node.nidParent)}`);
-                    // const parentNode = pst.getNode(node.nidParent);
-                    // const parentPC = pst.getPropertyContext(parentNode.bidData);
-                    // console.log(`Parent Name: ${parentPC?.getPCValueByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME)}`);
+            const messageKeys = pst.getAllNodeKeysOfType(PST.Node.NID_TYPE_NORMAL_MESSAGE);
+            for (const key of messageKeys) {
+                const message = pst.getMessage(key);
+                // const node = pst.getNode(key);
+                // console.log(`Parent: ${node.nidParent} NID Type: ${PSTNBTEntry.getNIDType(node.nidParent)}`);
+                // const parentNode = pst.getNode(node.nidParent);
+                // const parentPC = pst.getPropertyContext(parentNode.bidData);
+                // console.log(`Parent Name: ${parentPC?.getPCValueByKey(PSTPropertyContext.PID_TAG_DISPLAY_NAME)}`);
 
-                    const pc = pst.getPropertyContext(node.bidData);
-                    if (pc) {
-                        // for (const record of pc.getAllPCRecords()) {
-                        //     console.log(record);
-                        // }
-                        console.log(`Subject: ${pc.getPCValueByKey(PSTPropertyContext.PID_TAG_SUBJECT)}`);
-                        // console.log(pc.getPCValueByKey(PSTPropertyContext.PID_TAG_BODY));
-                        // const html = pc.getPCValueByKey(PSTPropertyContext.PID_TAG_BODY_HTML);
-                        // console.log(String.fromCharCode(...new Uint8Array(html)));
-                    }
-
-                    // break;
+                // const pc = pst.getPropertyContext(node.bidData);
+                if (message) {
+                    // for (const record of pc.getAllPCRecords()) {
+                    //     console.log(record);
+                    // }
+                    console.log(`Subject: ${message.subject}`);
+                    // console.log(pc.getPCValueByKey(PSTPropertyContext.PID_TAG_BODY));
+                    // const html = pc.getPCValueByKey(PSTPropertyContext.PID_TAG_BODY_HTML);
+                    // console.log(String.fromCharCode(...new Uint8Array(html)));
                 }
+
+                // break;
             }
         }
         catch (e) {
