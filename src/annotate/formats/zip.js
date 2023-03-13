@@ -7,9 +7,10 @@ export function magic (buffer) {
 }
 
 const template = [
-    // {
-    //     type: "repeater",
-    //     children: [
+    {
+        type: "repeater",
+        count: 10,
+        children: [
             {
                 type: "ASCII",
                 label: "Marker",
@@ -30,6 +31,7 @@ const template = [
                 type: "Uint16",
                 label: "Compression Method",
                 littleEndian: true,
+                enum: { 0: "none", 8: "DEFLATE" }
             },
             {
                 type: "Uint16",
@@ -84,8 +86,8 @@ const template = [
                 label: "Compressed Data",
                 length: "compressed_length"
             }
-    //     ]
-    // }
+        ]
+    }
 ];
 
 export default template;

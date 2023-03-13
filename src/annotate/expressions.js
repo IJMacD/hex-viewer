@@ -69,7 +69,7 @@ export function resolveReference (reference, annotations, buffer, self=null) {
 
     if (typeof reference === "string") {
         const id = reference.split(":", 2);
-        const ref = id[0] ? findAnnotation(annotations, id[0]) : self;
+        const ref = id[0] ? findAnnotationReverse(annotations, id[0]) : self;
         const type = id[1] || "value";
 
         if (!ref) {
@@ -96,7 +96,7 @@ export function resolveReference (reference, annotations, buffer, self=null) {
 
     if (typeof reference === "object") {
         if (reference.operation === "relative") {
-            const ref = findAnnotation(annotations, reference.to);
+            const ref = findAnnotationReverse(annotations, reference.to);
             return +getAnnotationData(ref, buffer) + ref.start;
         }
 

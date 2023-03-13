@@ -12,6 +12,7 @@ const formats = {
     "ZIP": require('./formats/zip'),
     "SQLITE": require('./formats/sqlite'),
     "PST": require('./formats/pst'),
+    "PDF": require('./formats/pdf'),
 };
 
 /**
