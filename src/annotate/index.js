@@ -164,7 +164,14 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
                 const view = new DataView(buffer, annotation.start);
                 let length;
                 for (length = 0; length < view.byteLength && view.getUint8(length) !== 0; length++) { }
-                annotation.length = length;
+                annotation.length = length + 1;
+            }
+            else if (!template.length && template.type === "UTF-16") {
+                // Find NULL terminator
+                const view = new DataView(buffer, annotation.start);
+                let length;
+                for (length = 0; length < view.byteLength && view.getUint16(length) !== 0; length+=2) { }
+                annotation.length = length + 2;
             }
             else {
                 annotation.length = +evaluateExpression(getAnnotationLength(template), [...annotations,...outAnnotations], buffer, annotation);

@@ -1,13 +1,22 @@
 import React, { useState } from "react";
 import "./AnnotationEditor.css";
 
-const types = [ "bytes", "ASCII", "UTF-8", "Uint8", "Uint16", "Uint32", "Uint64" ];
+const types = [ "bytes", "ASCII", "UTF-8", "UTF-16", "Uint8", "Uint16", "Uint32", "Uint64" ];
 
+/**
+ * @param {object} props
+ * @param {import("./annotate").AnnotationTemplate[]?} props.template
+ * @param {(template: import("./annotate").AnnotationTemplate[]) => void} props.setTemplate
+ */
 export default function AnnotationEditor ({ template = [], setTemplate }) {
     const [ editIndex, setEditIndex ] = useState(-1);
 
+    if (!template) {
+        template = [];
+    }
+
     function handleRemove (index) {
-        setTemplate([ ...template.slice(0, index), ...template.slice(index + 1) ]);
+        template && setTemplate([ ...template.slice(0, index), ...template.slice(index + 1) ]);
     }
 
     function handleNewAnnotation (newAnnotation) {
@@ -15,7 +24,7 @@ export default function AnnotationEditor ({ template = [], setTemplate }) {
     }
 
     function handleSave (annotation, index) {
-        setTemplate([ ...template.slice(0, index), annotation, ...template.slice(index + 1) ]);
+        template && setTemplate([ ...template.slice(0, index), annotation, ...template.slice(index + 1) ]);
         setEditIndex(-1);
     }
 
@@ -25,8 +34,10 @@ export default function AnnotationEditor ({ template = [], setTemplate }) {
     }
 
     function handleSubEdit (index, children) {
-        const annotation = { ...template[index], children };
-        setTemplate([ ...template.slice(0, index), annotation, ...template.slice(index + 1) ]);
+        if (template) {
+            const annotation = { ...template[index], children };
+            setTemplate([ ...template.slice(0, index), annotation, ...template.slice(index + 1) ]);
+        }
     }
 
     return (
@@ -61,10 +72,10 @@ function Annotation ({ annotation, onRemove, onEdit, editChildren }) {
             <dl>
                 {
                     Object.entries(annotation).filter(ddFilter).map(([key, value]) => (
-                        <>
+                        <React.Fragment key={key}>
                             <dt>{ key }</dt>
                             <dd>{ value }</dd>
-                        </>
+                        </React.Fragment>
                     ))
                 }
             </dl>
@@ -91,7 +102,7 @@ function ddFilter ([key, value]) {
 function EditAnnotation ({ addAnnotation, annotation, onCancel }) {
     const [ label, setLabel ] = useState(annotation?.label || "");
     const [ id, setID ] = useState(annotation?.id || "");
-    const [ type, setType ] = useState(annotation?.type || "");
+    const [ type, setType ] = useState(annotation?.type || "bytes");
     const [ start, setStart ] = useState(annotation?.start || 0);
     const [ length, setLength ] = useState(annotation?.length || 0);
     const [ enableStart, setEnableStart ] = useState(typeof annotation?.start === "number");

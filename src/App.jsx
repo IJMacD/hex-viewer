@@ -8,34 +8,36 @@ import './App.css';
 import AnnotationEditor from './AnnotationEditor';
 
 export default function App () {
-    const [ buffer, setBuffer ] = useState(null);
+    const [ buffer, setBuffer ] = useState(/** @type {ArrayBuffer?} */(null));
     const [ format, setFormat ] = useState(null);
-    const [ annotations, setAnnotations ] = useState([]);
+    const [ annotations, setAnnotations ] = useState(/** @type {import('./annotate').Annotation[]} */([]));
     const [ base64, setBase64 ] = useState("");
     const [ loading, setLoading ] = useState(false);
     const [ annotationEditMode, setAnnotationEditMode ] = useState(false);
-    const [ template, setTemplate ] = useState(null);
+    const [ template, setTemplate ] = useState(/** @type {import('./annotate').AnnotationTemplate[]?} */(null));
     const [ offsetText, setOffsetText ] = useState("0");
 
     /** @param {import('react').SyntheticEvent<HTMLInputElement>} e */
     function handleFileChange (e) {
         const files = e.currentTarget.files;
 
-        if (files.length) {
+        if (files && files.length) {
             setBuffer(null);
             setFormat(null);
-            setAnnotations(null);
+            setAnnotations([]);
             setLoading(true);
 
             const reader = new FileReader();
 
             reader.addEventListener("load", e => {
-                if (typeof e.target.result === "string") return;
+                if (e.target) {
+                    if (typeof e.target.result === "string") return;
 
-                const buffer = e.target.result;
+                    const buffer = e.target.result;
 
-                setBuffer(buffer);
-                setLoading(false);
+                    setBuffer(buffer);
+                    setLoading(false);
+                }
             });
 
             reader.readAsArrayBuffer(files[0]);
@@ -59,7 +61,9 @@ export default function App () {
     useEffect(() => {
         if (buffer) {
             const template = findFormatTemplate(buffer);
-            setTemplate(template);
+            if (template) {
+                setTemplate(template);
+            }
         }
 
         if (buffer && template) {
@@ -73,11 +77,13 @@ export default function App () {
     const offset = parseInt(offsetText, 16) || 0;
     let preview;
 
-    if (format === "BMP") {
-        preview = <BMP buffer={buffer} />;
-    }
-    else {
-        preview = <TXT buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />;
+    if (buffer) {
+        if (format === "BMP") {
+            preview = <BMP buffer={buffer} />;
+        }
+        else {
+            preview = <TXT buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />;
+        }
     }
 
     return (
@@ -98,7 +104,7 @@ export default function App () {
             <div className="App-panels">
                 { loading && <p>Loading...</p> }
                 { buffer &&
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: "32em" }}>
                         <h1>Hex</h1>
                         <div>
                             <button onClick={() => setOffsetText((offset - byteLimit).toString(16))} disabled={offset < byteLimit}>&lt;</button>
@@ -111,17 +117,17 @@ export default function App () {
                         </div>
                     </div>
                 }
-                { annotations && annotations.length > 0 &&
+                { annotations && annotations.length > 0 && buffer &&
                     <div style={{  }}>
                         <h1>Annotations</h1>
                         <Annotations buffer={buffer} annotations={annotations} setOffset={offset => setOffsetText((Math.floor(offset/16)*16).toString(16))} />
                     </div>
                 }
                 {
-                    annotationEditMode &&
+                    annotationEditMode && buffer &&
                     <div style={{  }}>
                         <h1>Template Editor</h1>
-                        <AnnotationEditor template={template} setTemplate={template => { setTemplate(template); setAnnotations(getAnnotations(template, buffer)); }} />
+                        <AnnotationEditor template={template} setTemplate={setTemplate} />
                     </div>
                 }
             </div>

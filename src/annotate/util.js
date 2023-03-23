@@ -108,6 +108,10 @@ export function getAnnotationData (annotation, buffer) {
                 data = [...Array(annotation.length)].map((_, i) => String.fromCharCode(view.getUint8(annotation.start + i))).join("");
                 if (data[data.length-1] === "\0") data = data.substring(0,data.length - 1);
                 break;
+            case "UTF-16":
+                data = String.fromCharCode(...new Uint16Array(view.buffer.slice(view.byteOffset + annotation.start, view.byteOffset + annotation.start + annotation.length)));
+                if (data[data.length-1] === "\0") data = data.substring(0,data.length - 1);
+                break;
             case "Uint8":
                 data = view.getUint8(annotation.start);
                 break;
