@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/hex-viewer/static/css/main.a4ee48f2.css",
-    "main.js": "/hex-viewer/static/js/main.3bcd642e.js",
+    "main.js": "/hex-viewer/static/js/main.c50c7537.js",
     "index.html": "/hex-viewer/index.html",
     "main.a4ee48f2.css.map": "/hex-viewer/static/css/main.a4ee48f2.css.map",
-    "main.3bcd642e.js.map": "/hex-viewer/static/js/main.3bcd642e.js.map"
+    "main.c50c7537.js.map": "/hex-viewer/static/js/main.c50c7537.js.map"
   },
   "entrypoints": [
     "static/css/main.a4ee48f2.css",
-    "static/js/main.3bcd642e.js"
+    "static/js/main.c50c7537.js"
   ]
 }
