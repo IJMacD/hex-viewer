@@ -40,14 +40,36 @@ export default function AnnotationEditor ({ template = [], setTemplate }) {
         }
     }
 
+    function handleMove (index, direction) {
+        if (template) {
+            if (direction < 0) {
+                setTemplate([
+                    ...template.slice(0, index - 1),
+                    template[index],
+                    template[index-1],
+                    ...template.slice(index + 1)
+                ]);
+                setEditIndex(index => index - 1);
+            } else {
+                setTemplate([
+                    ...template.slice(0, index),
+                    template[index+1],
+                    template[index],
+                    ...template.slice(index + 2)
+                ]);
+                setEditIndex(index => index + 1);
+            }
+        }
+    }
+
     return (
         <div className="AnnotationEditor">
             {
                 (template||[]).map((a,i) => {
                     if (i === editIndex) {
-                        return <EditAnnotation key={i} annotation={a} addAnnotation={a => handleSave(a, i)} onCancel={() => setEditIndex(-1)} />;
+                        return <EditAnnotation key={i} annotation={a} addAnnotation={a => handleSave(a, i)} onCancel={() => setEditIndex(-1)} onMove={direction => handleMove(i, direction)} />;
                     }
-                    return <Annotation key={i} annotation={a} onRemove={() => handleRemove(i)} onEdit={() => setEditIndex(i)} editChildren={children => handleSubEdit(i, children)} />;
+                    return <Annotation key={i} annotation={a} onRemove={() => handleRemove(i)} onEdit={() => setEditIndex(i)} editChildren={children => handleSubEdit(i, children)} onMove={direction => handleMove(i, direction)} />;
                 })
             }
             <EditAnnotation addAnnotation={handleNewAnnotation} />
@@ -56,7 +78,7 @@ export default function AnnotationEditor ({ template = [], setTemplate }) {
     );
 }
 
-function Annotation ({ annotation, onRemove, onEdit, editChildren }) {
+function Annotation ({ annotation, onRemove, onEdit, editChildren, onMove }) {
     if (annotation.children) {
         return (
             <div className="AnnotationEditor-Annotation">
@@ -81,6 +103,8 @@ function Annotation ({ annotation, onRemove, onEdit, editChildren }) {
             </dl>
             <button onClick={onEdit} style={{ position: "absolute", top: 32, right: 8 }}>Edit</button>
             <button onClick={onRemove} style={{ position: "absolute", top: 8, right: 8 }}>Remove</button>
+            <button onClick={() => onMove(-1)} style={{ position: "absolute", top: 56, right: 8 }}>Move Up</button>
+            <button onClick={() => onMove(+1)} style={{ position: "absolute", top: 80, right: 8 }}>Move Down</button>
         </div>
     );
 }
@@ -94,12 +118,13 @@ function ddFilter ([key, value]) {
 /**
  *
  * @param {object} props
- * @param {(object) => void} props.addAnnotation
- * @param {import("./annotate").Annotation} [props.annotation]
+ * @param {(annotation: import("./annotate").AnnotationTemplate) => void} props.addAnnotation
+ * @param {import("./annotate").AnnotationTemplate} [props.annotation]
  * @param {() => void} [props.onCancel]
+ * @param {(direction: number) => void} [props.onMove]
  * @returns
  */
-function EditAnnotation ({ addAnnotation, annotation, onCancel }) {
+function EditAnnotation ({ addAnnotation, annotation, onCancel, onMove }) {
     const [ label, setLabel ] = useState(annotation?.label || "");
     const [ id, setID ] = useState(annotation?.id || "");
     const [ type, setType ] = useState(annotation?.type || "bytes");
@@ -151,6 +176,8 @@ function EditAnnotation ({ addAnnotation, annotation, onCancel }) {
             <div style={{textAlign:"right"}}>
                 { onCancel && <button onClick={onCancel}>Cancel</button> }
                 <button onClick={handleAdd}>{annotation?"Save":"Add"}</button>
+                { onMove && <button onClick={() => onMove(-1)}>Move Up</button> }
+                { onMove && <button onClick={() => onMove(+1)}>Move Down</button> }
             </div>
         </div>
     );
