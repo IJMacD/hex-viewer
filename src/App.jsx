@@ -6,6 +6,7 @@ import BMP from './preview/BMP';
 import TXT from './preview/TXT';
 import './App.css';
 import AnnotationEditor from './AnnotationEditor';
+import { SearchWidget } from './SearchWidget';
 
 export default function App () {
     const [ buffer, setBuffer ] = useState(/** @type {ArrayBuffer?} */(null));
@@ -131,6 +132,7 @@ export default function App () {
                     </div>
                 }
             </div>
+            { buffer && <SearchWidget buffer={buffer} /> }
         </div>
     );
 }
