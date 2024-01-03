@@ -88,23 +88,29 @@ export default function App () {
 
     return (
         <div className="App">
-            <div className="input">
-                <label>File Input<br/>
-                    <input type="file" id="file-input" onChange={handleFileChange} />
-                </label>
-                <label>Base64 Input<br/>
-                    <textarea value={base64} onChange={handleBase64Change} />
-                </label>
+            { !buffer && !loading &&
+                <div className="input">
+                    <h1>HexViewer</h1>
+                    <label>File Input<br/>
+                        <input type="file" id="file-input" onChange={handleFileChange} />
+                    </label>
+                    <label>Base64 Input<br/>
+                        <textarea value={base64} onChange={handleBase64Change} />
+                    </label>
+                </div>
+            }
+            { buffer &&
                 <div>
+                    <button onClick={() => setBuffer(null)}>Close</button>
                     <button onClick={() => setAnnotationEditMode(m => !m)}>
                         Edit Annotations
                     </button>
                 </div>
-            </div>
+            }
             <div className="App-panels">
                 { loading && <p>Loading...</p> }
                 { buffer &&
-                    <div style={{ flex: 1, minWidth: "32em" }}>
+                    <div className="panel" style={{ flex: "2 1 32em" }}>
                         <h1>Hex</h1>
                         <div>
                             <button onClick={() => setOffsetText((offset - byteLimit).toString(16))} disabled={offset < byteLimit}>&lt;</button>
@@ -117,15 +123,15 @@ export default function App () {
                         </div>
                     </div>
                 }
-                { annotations && annotations.length > 0 && buffer &&
-                    <div style={{  }}>
+                { annotations && annotations.length > 0 &&
+                    <div className="panel" style={{ }}>
                         <h1>Annotations</h1>
                         <Annotations buffer={buffer} annotations={annotations} setOffset={offset => setOffsetText((Math.floor(offset/16)*16).toString(16))} />
                     </div>
                 }
                 {
                     annotationEditMode && buffer &&
-                    <div style={{  }}>
+                    <div className="panel" style={{ }}>
                         <h1>Template Editor</h1>
                         <AnnotationEditor template={template} setTemplate={setTemplate} />
                     </div>
