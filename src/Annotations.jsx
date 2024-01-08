@@ -100,7 +100,9 @@ export default function Annotations ({ buffer, annotations, setOffset }) {
                             title = <>{title} <code style={{color: "#333"}}>{enumValue}</code></>;
                         }
 
-                        let backgroundColor = a.color;
+                        const colour = a.color||"transparent";
+
+                        let backgroundColor = colour;
                         if (backgroundColor.startsWith("#")) {
                             backgroundColor = opacity(backgroundColor, 0.5);
                         }
@@ -115,7 +117,7 @@ export default function Annotations ({ buffer, annotations, setOffset }) {
                             <li
                                 key={i}
                                 style={{
-                                    borderColor: a.color,
+                                    borderColor: colour,
                                     backgroundColor,
                                     marginLeft: (a.depth||0)*16
                                 }}

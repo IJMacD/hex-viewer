@@ -13,7 +13,21 @@ const formats = {
     "SQLITE": require('./formats/sqlite'),
     "PST": require('./formats/pst'),
     "PDF": require('./formats/pdf'),
+    "PCX": require('./formats/pcx'),
 };
+
+/**
+ * @param {ArrayBuffer} buffer
+ */
+export function findFormat(buffer) {
+    for (const format in formats) {
+        const template = formats[format].magic(buffer);
+
+        if (template) {
+            return format;
+        }
+    }
+}
 
 /**
  * @param {ArrayBuffer} buffer
@@ -229,6 +243,8 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
             while (start < buffer.byteLength && childCount < maxCount) {
                 const newAnnotations = processAnnotationTemplates(template.children, buffer, [...annotations, ...outAnnotations], start, depth + 1);
                 outAnnotations.push(...newAnnotations);
+                // Marker for visual hint
+                outAnnotations.push({type:"marker"})
 
                 const last = newAnnotations[newAnnotations.length - 1];
                 absoluteEnd = last.start + last.length;

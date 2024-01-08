@@ -13,14 +13,16 @@ export default function HexView ({ buffer, annotations, offset = 0, byteLimit = 
     }
 
     const lines = [];
-    for (let i = 0; i < buffer.byteLength && i < byteLimit; i += 16) {
-        const view = new DataView(buffer, offset + i, Math.min(16, buffer.byteLength - i));
-        const line = [];
-        for (let j = 0; j < view.byteLength; j++) {
-            line.push(view.getUint8(j));
+    try {
+        for (let i = 0; i < buffer.byteLength && i < byteLimit; i += 16) {
+            const view = new DataView(buffer, offset + i, Math.min(16, buffer.byteLength - i));
+            const line = [];
+            for (let j = 0; j < view.byteLength; j++) {
+                line.push(view.getUint8(j));
+            }
+            lines.push(line);
         }
-        lines.push(line);
-    }
+    } catch (e) {}
 
     return (
         <div className="HexView">

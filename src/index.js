@@ -1,6 +1,8 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import ReactDOM from 'react-dom/client';
 import AppWrap from './AppWrap';
 import './index.css';
 
-ReactDOM.render(<AppWrap />, document.getElementById('root'));
+// @ts-ignore
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<AppWrap />);

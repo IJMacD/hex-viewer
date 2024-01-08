@@ -6,11 +6,12 @@ export default class AppWrap extends React.Component {
         super(props);
 
         this.state = {
-            error: null,
+            error: /** @type {Error?} */(null),
         }
     }
 
     componentDidCatch (error) {
+        // console.log(error);
         this.setState({ error });
     }
 
