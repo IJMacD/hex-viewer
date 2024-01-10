@@ -14,6 +14,7 @@ const formats = {
     "PST": require('./formats/pst'),
     "PDF": require('./formats/pdf'),
     "PCX": require('./formats/pcx'),
+    "JPG": require('./formats/jpg'),
 };
 
 /**
@@ -223,7 +224,7 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
             // TODO: This should be more generic to handle more types of failures
             try {
                 if (typeof template.count !== "undefined") {
-                    maxCount = +evaluateExpression(template.count, annotations, buffer, annotation);
+                    maxCount = +evaluateExpression(template.count, [...annotations, ...outAnnotations], buffer, annotation);
                 }
             }
             catch (e) {
@@ -237,7 +238,8 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
                     continue;
                 }
 
-                throw e;
+                maxCount = 0;
+                // throw e;
             }
 
             while (start < buffer.byteLength && childCount < maxCount) {
@@ -246,8 +248,7 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
                 // Marker for visual hint
                 outAnnotations.push({type:"marker"})
 
-                const last = newAnnotations[newAnnotations.length - 1];
-                absoluteEnd = last.start + last.length;
+                absoluteEnd = getLastEnd(newAnnotations);
 
                 // If we haven't moved then bail
                 if (absoluteEnd === start) {
@@ -260,6 +261,11 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
                 start = absoluteEnd;
 
                 childCount++;
+
+                // Safety valve
+                if (childCount > 1000) {
+                    break;
+                }
             }
 
             // Calculated actual length of this repeater
@@ -285,23 +291,35 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
                 throw Error("Expected children in the annotation");
             }
             let absoluteStart = annotation.start; // start + groupStart;
+            // Initialise to check for movement
+            let absoluteEnd = absoluteStart;
+
             annotation.color = getAnnotationColor(template);
             outAnnotations.push(annotation);
             const newAnnotations = processAnnotationTemplates(template.children, buffer, [...annotations,...outAnnotations], absoluteStart, depth + 1);
             outAnnotations.push(...newAnnotations);
 
-            const last = newAnnotations[newAnnotations.length - 1];
-            const end = last.start + last.length;
+            absoluteEnd = getLastEnd(newAnnotations);
 
-            if (typeof annotation.length !== "number" || annotation.length <= 0) {
-                annotation.length = end - annotation.start;
+            // If we haven't moved then bail
+            if (absoluteEnd === absoluteStart) {
+                break;
+            }
+
+            // Calculated actual length of this group
+            const length = absoluteEnd - annotation.start;
+
+            // Check if there was an explicit fixed length
+            // If we had less than the fixed length then we'll use the explicit
+            // length. Otherwise fill in the calculated value.
+            if (typeof annotation.length === "number" && annotation.length > length) {
+                // NO op
+            }
+            else {
+                annotation.length = length;
             }
 
             relativeStart = annotation.start + annotation.length - groupOffset;
-
-            if (end === absoluteStart) {
-                break;
-            }
         }
         else if (template.type === "switch") {
             let val = null;
@@ -319,6 +337,9 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
                     const newAnnotations = processAnnotationTemplates(sublist, buffer, [...annotations, ...outAnnotations], annotation.start, depth);
                     outAnnotations.push(...newAnnotations);
                 }
+            }
+            else {
+                throw Error(`Unable to evaluate value of type: ${typeof val}`);
             }
 
             const last = outAnnotations[outAnnotations.length - 1];
@@ -359,4 +380,16 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
     }
 
     return outAnnotations;
+}
+
+/**
+ * @param {{ start: number|undefined, length: number|undefined }[]} annotations
+ */
+function getLastEnd (annotations) {
+    return Math.max(...annotations.map(a => {
+        if (typeof a.start === "number" && typeof a.length === "number") {
+            return a.start + a.length;
+        }
+        return 0;
+    }));
 }

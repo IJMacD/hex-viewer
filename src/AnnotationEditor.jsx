@@ -93,13 +93,17 @@ export default function AnnotationEditor ({ template = [], setTemplate }) {
         catch (e) {}
     }
 
+    let jsonValid = true;
+    try { JSON.parse(jsonInput); }
+    catch (e) { jsonValid = false; }
+
     return (
         <div className="AnnotationEditor">
             <button onClick={handleExport}>Export</button>
             <button onClick={() => setEditMode(mode => mode === "json" ? "visual" : "json")}>{ editMode === "json" ? "Visual" : "JSON" }</button>
 
             { (editMode === "json") ?
-                <textarea style={{width:"100%",height:500}} value={jsonInput} onChange={handleJSONEdit} />
+                <textarea style={{width:"100%",height:500,border:jsonValid?"":"1px solid red"}} value={jsonInput} onChange={handleJSONEdit} />
             :
                 <>
                 {

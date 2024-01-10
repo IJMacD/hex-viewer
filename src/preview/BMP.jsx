@@ -5,8 +5,7 @@ import React from 'react';
  * @param {{ buffer: ArrayBuffer }} props
  */
 export default function BMP ({ buffer }) {
-    /** @type {React.MutableRefObject<HTMLCanvasElement>} */
-    const canvas = React.useRef();
+    const canvas = React.useRef(/** @type {HTMLCanvasElement?} */(null));
 
     const data = new DataView(buffer);
 

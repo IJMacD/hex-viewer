@@ -7,6 +7,7 @@ import TXT from './preview/TXT';
 import './App.css';
 import AnnotationEditor from './AnnotationEditor';
 import PCX from './preview/PCX';
+import JPG from './preview/JPG';
 
 export default function App () {
     const [ buffer, setBuffer ] = useState(/** @type {ArrayBuffer?} */(null));
@@ -101,6 +102,9 @@ export default function App () {
         }
         else if (format === "PCX") {
             preview = <PCX buffer={buffer} />;
+        }
+        else if (format === "JPG") {
+            preview = <JPG buffer={buffer} />;
         }
         else {
             preview = <TXT buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />;

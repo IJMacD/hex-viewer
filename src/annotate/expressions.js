@@ -67,6 +67,10 @@ export function resolveReference (reference, annotations, buffer, self=null) {
         return reference;
     }
 
+    if (!isNaN(+reference)) {
+        return +reference;
+    }
+
     if (typeof reference === "string") {
         const id = reference.split(":", 2);
         const ref = id[0] ? findAnnotationReverse(annotations, id[0]) : self;

@@ -5,9 +5,9 @@ import { getAnnotation, getAnnotationStyle } from '../annotate/util';
 
 /**
  *
- * @param {{ buffer: ArrayBuffer, annotations: import('../annotate').Annotation[]?, offset?: number, byteLimit?: number }} props
+ * @param {{ buffer: ArrayBuffer, annotations?: import('../annotate').Annotation[], offset?: number, byteLimit?: number }} props
  */
-export default function TXT ({ buffer, annotations, offset = 0, byteLimit = 1024 }) {
+export default function TXT ({ buffer, annotations = [], offset = 0, byteLimit = 1024 }) {
     if (!buffer) {
         return null;
     }
