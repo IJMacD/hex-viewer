@@ -15,6 +15,7 @@ const formats = {
     "PDF": require('./formats/pdf'),
     "PCX": require('./formats/pcx'),
     "JPG": require('./formats/jpg'),
+    "EXE": require('./formats/exe'),
 };
 
 /**
