@@ -10,6 +10,7 @@ import PCX from './preview/PCX';
 import JPG from './preview/JPG';
 import PDF from './preview/PDF';
 import ErrorBoundary from './ErrorBoundary';
+import TXT from './preview/TXT';
 
 export default function App () {
     const [ buffer, setBuffer ] = useState(/** @type {ArrayBuffer?} */(null));
@@ -114,6 +115,9 @@ export default function App () {
         }
         else if (selectedPreview === "PDF") {
             preview = <PDF buffer={buffer} />;
+        }
+        else if (selectedPreview === "TXT") {
+            preview = <TXT buffer={buffer} />;
         }
         else {
             wideHexPanel = true;
