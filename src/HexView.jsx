@@ -14,8 +14,8 @@ export default function HexView ({ buffer, annotations, offset = 0, byteLimit = 
 
     const lines = [];
     try {
-        for (let i = 0; i < buffer.byteLength && i < byteLimit; i += 16) {
-            const view = new DataView(buffer, offset + i, Math.min(16, buffer.byteLength - i));
+        for (let i = 0; offset + i < buffer.byteLength && i < byteLimit; i += 16) {
+            const view = new DataView(buffer, offset + i, Math.min(16, buffer.byteLength - offset - i));
             const line = [];
             for (let j = 0; j < view.byteLength; j++) {
                 line.push(view.getUint8(j));

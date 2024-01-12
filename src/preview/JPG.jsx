@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import TXT from './TXT';
+import TXT from './HexTXT';
+import { getASCIIString } from '../util/getASCIIString';
 
 const MARKER_EXIF = 0xFFE1;
 
@@ -404,15 +405,6 @@ function getIDFBytes (entry, buffer) {
     if (size <= 4) return entry.data.slice(0, size);
     const offset = getIDFOffset(entry);
     return buffer.slice(offset, offset + size);
-}
-
-/**
- * @param {ArrayBuffer} buffer
- * @param {number} start
- * @param {number} length
- */
-function getASCIIString(buffer, start, length) {
-    return String.fromCharCode(...new Uint8Array(buffer.slice(start, start + length)));
 }
 
 const EXIF_TAGS = {

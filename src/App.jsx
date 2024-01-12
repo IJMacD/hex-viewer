@@ -3,11 +3,13 @@ import HexView from './HexView';
 import Annotations from './Annotations';
 import { findFormat, findFormatTemplate, getAnnotations } from './annotate';
 import BMP from './preview/BMP';
-import TXT from './preview/TXT';
+import HexTXT from './preview/HexTXT';
 import './App.css';
 import AnnotationEditor from './AnnotationEditor';
 import PCX from './preview/PCX';
 import JPG from './preview/JPG';
+import PDF from './preview/PDF';
+import ErrorBoundary from './ErrorBoundary';
 
 export default function App () {
     const [ buffer, setBuffer ] = useState(/** @type {ArrayBuffer?} */(null));
@@ -18,6 +20,7 @@ export default function App () {
     const [ annotationEditMode, setAnnotationEditMode ] = useState(false);
     const [ template, setTemplate ] = useState(/** @type {import('./annotate').AnnotationTemplate[]?} */(null));
     const [ offsetText, setOffsetText ] = useState("0");
+    const [ selectedPreview, setSelectedPreview ] = useState("None");
 
     /** @param {import('react').SyntheticEvent<HTMLInputElement>} e */
     function handleFileChange (e) {
@@ -76,6 +79,7 @@ export default function App () {
         else {
             setTemplate(null);
             setFormat(null);
+            setSelectedPreview("None");
         }
     }, [buffer]);
 
@@ -96,18 +100,22 @@ export default function App () {
     let preview;
     let wideHexPanel = false;
 
+    const availablePreviews = ["None","TXT","BMP","PCX","JPG","PDF"].filter(f => f === "None" || f === "TXT" || f === format);
+
     if (buffer) {
-        if (format === "BMP") {
+        if (selectedPreview === "BMP") {
             preview = <BMP buffer={buffer} />;
         }
-        else if (format === "PCX") {
+        else if (selectedPreview === "PCX") {
             preview = <PCX buffer={buffer} />;
         }
-        else if (format === "JPG") {
+        else if (selectedPreview === "JPG") {
             preview = <JPG buffer={buffer} />;
         }
+        else if (selectedPreview === "PDF") {
+            preview = <PDF buffer={buffer} />;
+        }
         else {
-            preview = <TXT buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />;
             wideHexPanel = true;
         }
     }
@@ -143,7 +151,16 @@ export default function App () {
                         <button onClick={() => setBuffer(null)}>Close</button>
                         <button onClick={() => setAnnotationEditMode(m => !m)}>
                             Edit Annotations
-                        </button>
+                        </button>{' '}
+                        {
+                            availablePreviews.length > 0 &&
+                            <>
+                                Preview:{' '}
+                                {
+                                    availablePreviews.map((label, i) => <button key={i} onClick={() => setSelectedPreview(label)} disabled={label === selectedPreview}>{label}</button>)
+                                }
+                            </>
+                        }
                     </div>
                 </div>
             }
@@ -161,15 +178,19 @@ export default function App () {
                         </div>
                         <div style={{ display: 'flex' }}>
                             <HexView buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />
-                            { preview?.type == TXT &&
-                                preview
+                            { selectedPreview === "None" &&
+                                <ErrorBoundary>
+                                    <HexTXT buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />;
+                                </ErrorBoundary>
                             }
                         </div>
                     </div>
                 }
-                { buffer && preview?.type != TXT &&
+                { buffer && preview &&
                     <div className="panel">
-                        {preview}
+                        <ErrorBoundary>
+                            {preview}
+                        </ErrorBoundary>
                     </div>
                 }
                 { annotations && annotations.length > 0 && buffer &&

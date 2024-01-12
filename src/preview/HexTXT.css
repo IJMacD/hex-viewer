@@ -1,8 +1,9 @@
-.TXTPreview {
+.HexTXTPreview {
     font-family: monospace;
     border-spacing: 0;
 }
 
-.TXTPreview td {
+.HexTXTPreview td {
     border: 1px solid transparent;
+    line-height: 15.5px;
 }

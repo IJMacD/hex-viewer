@@ -5,7 +5,7 @@ const formats = {
     "BMP": require('./formats/bmp'),
     "GIF": require('./formats/gif'),
     "PNG": require('./formats/png'),
-    "TXT": require('./formats/txt'),
+    // "TXT": require('./formats/txt'),
     "WAVE": require('./formats/wav'),
     "AR": require('./formats/ar'),
     "ELF": require('./formats/elf'),
