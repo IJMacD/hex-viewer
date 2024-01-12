@@ -171,7 +171,7 @@ export default function App () {
             <div className="App-panels">
                 { loading && <p>Loading...</p> }
                 { buffer &&
-                    <div className="panel" style={{ flex: wideHexPanel ? "2 1 32em" : "1 2 20em" }}>
+                    <div className="panel" style={{ padding:"0 1em", flex: wideHexPanel ? "0 0 35em" : "0 0 22em" }}>
                         <h1>Hex</h1>
                         <div>
                             <button onClick={() => setOffsetText("0")} disabled={offset == 0}>&lt;&lt;</button>
@@ -190,24 +190,24 @@ export default function App () {
                         </div>
                     </div>
                 }
-                { buffer && preview &&
-                    <div className="panel">
-                        <ErrorBoundary>
-                            {preview}
-                        </ErrorBoundary>
-                    </div>
-                }
                 { annotations && annotations.length > 0 && buffer &&
-                    <div className="panel" style={{ }}>
+                    <div className="panel" style={{padding:"0 1em"}}>
                         <h1>Annotations</h1>
                         <Annotations buffer={buffer} annotations={annotations} setOffset={offset => setOffsetText((Math.floor(offset/16)*16).toString(16))} />
                     </div>
                 }
                 {
                     annotationEditMode && buffer &&
-                    <div className="panel" style={{ }}>
+                    <div className="panel" style={{padding:"0 1em"}}>
                         <h1>Template Editor</h1>
                         <AnnotationEditor template={template} setTemplate={setTemplate} />
+                    </div>
+                }
+                { buffer && preview &&
+                    <div className="panel" style={{padding:"0 1em"}}>
+                        <ErrorBoundary>
+                            {preview}
+                        </ErrorBoundary>
                     </div>
                 }
             </div>
