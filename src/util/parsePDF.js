@@ -110,6 +110,12 @@ function populateChildren(object, objects) {
             populateChildren(object.resources, objects);
         }
     }
+    else if (typeof object.value['Resources'] === "object") {
+        object.resources = { value: object.value['Resources'] };
+        if (object.resources) {
+            populateChildren(object.resources, objects);
+        }
+    }
 
     if (typeof object.value['XObject'] === "object") {
         /** @type {{[id: string]: PDFObject}} */
