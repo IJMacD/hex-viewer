@@ -341,12 +341,27 @@ function renderImage (canvas, object) {
                     imgData.data[i+2]   = object.stream[Math.floor(i/4)];
                     imgData.data[i+3]   = 255;
                 }
-                else {
+                else if (object.value['ColorSpace'] === "/CalRGB" ||
+                    (Array.isArray(object.value['ColorSpace']) && object.value['ColorSpace'].includes("/CalRGB"))
+                ) {
                     // Byte align
-                    const y = Math.floor(i / 4 / width);
-                    imgData.data[i]     = object.stream[y+Math.floor(i/4)*3];
-                    imgData.data[i+1]   = object.stream[y+Math.floor(i/4)*3+1];
-                    imgData.data[i+2]   = object.stream[y+Math.floor(i/4)*3+2];
+                    const rowAlign = width % 3;
+                    const rowNumber = Math.floor(i / 4 / width);
+                    const rowOffset = rowAlign * rowNumber + 1;
+
+                    // TODO: this has all been reverse engineered from one PDF
+                    // not sure why this is bytes aligned and additioanly needs
+                    // a constant offset of 1.
+
+                    imgData.data[i]     = object.stream[rowOffset+Math.floor(i/4)*3];
+                    imgData.data[i+1]   = object.stream[rowOffset+Math.floor(i/4)*3+1];
+                    imgData.data[i+2]   = object.stream[rowOffset+Math.floor(i/4)*3+2];
+                    imgData.data[i+3]   = 255;
+                }
+                else {
+                    imgData.data[i]     = object.stream[Math.floor(i/4)*3];
+                    imgData.data[i+1]   = object.stream[Math.floor(i/4)*3+1];
+                    imgData.data[i+2]   = object.stream[Math.floor(i/4)*3+2];
                     imgData.data[i+3]   = 255;
                 }
             }
@@ -410,97 +425,109 @@ function PDFPageRender ({ page }) {
         const args = [];
 
         for (const token of tokens) {
-            let isCmd = true;
 
-            if (token === "q") {
-                ctx.save();
-            }
-            else if (token === "Q") {
-                ctx.restore();
-            }
-            else if (token === "cm") {
-                ctx.transform(+args[0], +args[1], +args[2], +args[3], +args[4], +args[5]);
-            }
-            else if (token === "rg") {
-                ctx.fillStyle = `rgb(${+args[0]*255}, ${+args[1]*255}, ${+args[2]*255})`;
-            }
-            else if (token === "RG") {
-                ctx.strokeStyle = `rgb(${+args[0]*255}, ${+args[1]*255}, ${+args[2]*255})`;
-            }
-            else if (token === "g") {
-                ctx.fillStyle = `rgb(${+args[0]*255}, ${+args[0]*255}, ${+args[0]*255})`;
-            }
-            else if (token === "G") {
-                ctx.strokeStyle = `rgb(${+args[0]*255}, ${+args[0]*255}, ${+args[0]*255})`;
-            }
-            else if (token === "BT") {
-                // Begin Text
-            }
-            else if (token === "Tf") {
-                // Set Font
-                const fontObject = page.resources?.fonts?.[args[0].substring(1)];
-                if (fontObject) {
-                    const parts = (fontObject.value['BaseFont']||"").substring(1).split(",");
-                    const baseName = parts[0].split("+").at(-1);
-                    ctx.font = `${parts[1] === "Bold" ? "bold" : ""} ${args[1]}px ${baseName}, sans-serif`;
-                }
-            }
-            else if (token === "Td") {
-                textPosition[0] = +args[0];
-                textPosition[1] = +args[1];
-            }
-            else if (token === "Tj") {
-                ctx.save()
-                // Un-invert Y-Axis for text
-                ctx.scale(1, -1);
-                ctx.fillText(args[0], textPosition[0], -textPosition[1]);
-                ctx.restore();
-            }
-            else if (token === "ET") {
-                // End Text
-            }
-            else if (token === "Do") {
-                // Draw Image
-                const img = page.resources?.xObjects?.[args[0].substring(1)];
-                if (img && img.value['Subtype'] === "/Image") {
-                    const canvas = document.createElement("canvas");
-                    renderImage(canvas, img);
+            if (token.type === "cmd") {
+                const cmd = token.value;
+
+                if (cmd === "q") {
                     ctx.save();
-                    ctx.scale(1, -1);
-                    ctx.drawImage(canvas, 0, 0, 1, -1);
+                }
+                else if (cmd === "Q") {
                     ctx.restore();
                 }
-            }
-            else if (token === "w") {
-                ctx.lineWidth = +args[0];
-            }
-            else if (token === "J") {
-                // Line cap style
-            }
-            else if (token === "m") {
-                ctx.beginPath();
-                ctx.moveTo(+args[0], +args[1]);
-            }
-            else if (token === "l") {
-                ctx.lineTo(+args[0], +args[1]);
-            }
-            else if (token === "re") {
-                ctx.rect(+args[0], +args[1], +args[2], +args[3]);
-            }
-            else if (token === "S") {
-                ctx.stroke();
-            }
-            else if (token === "f" || token === "f*") {
-                ctx.fill();
+                else if (cmd === "cm") {
+                    ctx.transform(+args[0], +args[1], +args[2], +args[3], +args[4], +args[5]);
+                }
+                else if (cmd === "Tm") {
+                    // TODO: test if this is correct
+                    ctx.transform(+args[0], +args[1], +args[2], +args[3], +args[4], +args[5]);
+                }
+                else if (cmd === "rg") {
+                    ctx.fillStyle = `rgb(${+args[0]*255}, ${+args[1]*255}, ${+args[2]*255})`;
+                }
+                else if (cmd === "RG") {
+                    ctx.strokeStyle = `rgb(${+args[0]*255}, ${+args[1]*255}, ${+args[2]*255})`;
+                }
+                else if (cmd === "g") {
+                    ctx.fillStyle = `rgb(${+args[0]*255}, ${+args[0]*255}, ${+args[0]*255})`;
+                }
+                else if (cmd === "G") {
+                    ctx.strokeStyle = `rgb(${+args[0]*255}, ${+args[0]*255}, ${+args[0]*255})`;
+                }
+                else if (cmd === "BT") {
+                    // Begin Text
+                }
+                else if (cmd === "Tf") {
+                    // Set Font
+                    const fontObject = page.resources?.fonts?.[args[0].substring(1)];
+                    if (fontObject) {
+                        const parts = (fontObject.value['BaseFont']||"").substring(1).split(",");
+                        const baseName = parts[0].split("+").at(-1);
+                        ctx.font = `${parts[1] === "Bold" ? "bold" : ""} ${args[1]}px ${baseName}, sans-serif`;
+                    }
+                }
+                else if (cmd === "Td") {
+                    textPosition[0] = +args[0];
+                    textPosition[1] = +args[1];
+                }
+                else if (cmd === "Tj") {
+                    ctx.save()
+                    // Un-invert Y-Axis for text
+                    ctx.scale(1, -1);
+                    ctx.fillText(args[0], textPosition[0], -textPosition[1]);
+                    ctx.restore();
+                }
+                else if (cmd === "ET") {
+                    // End Text
+                }
+                else if (cmd === "Do") {
+                    // Draw Image
+                    const img = page.resources?.xObjects?.[args[0].substring(1)];
+                    if (img && img.value['Subtype'] === "/Image") {
+                        const canvas = document.createElement("canvas");
+                        renderImage(canvas, img);
+                        ctx.save();
+                        ctx.scale(1, -1);
+                        ctx.drawImage(canvas, 0, 0, 1, -1);
+                        ctx.restore();
+                    }
+                }
+                else if (cmd === "w") {
+                    ctx.lineWidth = +args[0];
+                }
+                else if (cmd === "W*") {
+                    ctx.clip();
+                }
+                else if (cmd === "n") {
+                    // end path
+                }
+                else if (cmd === "J") {
+                    // Line cap style
+                }
+                else if (cmd === "m") {
+                    ctx.beginPath();
+                    ctx.moveTo(+args[0], +args[1]);
+                }
+                else if (cmd === "l") {
+                    ctx.lineTo(+args[0], +args[1]);
+                }
+                else if (cmd === "re") {
+                    ctx.rect(+args[0], +args[1], +args[2], +args[3]);
+                }
+                else if (cmd === "S") {
+                    ctx.stroke();
+                }
+                else if (cmd === "f" || cmd === "f*") {
+                    ctx.fill();
+                }
+                else {
+                    console.log(`Unknown cmd: ${cmd}`);
+                }
+
+                args.length = 0;
             }
             else {
-                args.push(token);
-                isCmd = false;
-            }
-
-            if (isCmd) {
-                console.log({cmd: token, args});
-                args.length = 0;
+                args.push(token.value);
             }
         }
 
@@ -517,6 +544,7 @@ function PDFPageRender ({ page }) {
  * @param {string} content
  */
 function tokenize(content) {
+    /** @type {({ type: "cmd", value: string }|{ type: "string", value: string }|{ type: "number", value: number })[]} */
     const out = [];
     const whitespaceRe = /\s/;
 
@@ -526,17 +554,17 @@ function tokenize(content) {
         const c = content[index];
 
         if (c === "(") {
-            let val = "";
+            let value = "";
             index++;
             while (content[index] !== ")") {
                 if (content[index] === "\\") {
                     index++;
                 }
-                val += content[index];
+                value += content[index];
                 index++;
             }
             index++;
-            out.push(val);
+            out.push({ type: "string", value });
         }
         else if (c === "<") {
             index++;
@@ -555,7 +583,7 @@ function tokenize(content) {
             }
             const charCodes = new Uint16Array(bytes.buffer);
             const str = String.fromCharCode(...charCodes);
-            out.push(str);
+            out.push({ type: "string", value: str });
             index = end + 1;
         }
         else if (whitespaceRe.test(c)) {
@@ -565,8 +593,16 @@ function tokenize(content) {
             const start = index;
             while(!whitespaceRe.test(content[index++]) && index < content.length);
             const end = index - 1;
-            const val = content.substring(start, end);
-            out.push(val);
+            const value = content.substring(start, end);
+            if (/^-?[\d.]+$/.test(value)) {
+                out.push({ type: "number", value: +value });
+            }
+            else if(value[0] === "/") {
+                out.push({ type: "string", value });
+            }
+            else {
+                out.push({ type: "cmd", value });
+            }
             index = end + 1;
         }
     }
