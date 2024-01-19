@@ -1,21 +1,35 @@
 import { evaluateExpression, resolveReference } from "./expressions";
 import { getAnnotationLength, getAnnotationColor, getAnnotationData } from "./util";
 
+import * as BMP from './formats/bmp';
+import * as GIF from './formats/gif';
+import * as PNG from './formats/png';
+import * as WAVE from './formats/wav';
+import * as AR from './formats/ar';
+import * as ELF from './formats/elf';
+import * as ZIP from './formats/zip';
+import * as SQLITE from './formats/sqlite';
+import * as PST from './formats/pst';
+import * as PDF from './formats/pdf';
+import * as PCX from './formats/pcx';
+import * as JPG from './formats/jpg';
+import * as EXE from './formats/exe';
+
 const formats = {
-    "BMP": require('./formats/bmp'),
-    "GIF": require('./formats/gif'),
-    "PNG": require('./formats/png'),
-    // "TXT": require('./formats/txt'),
-    "WAVE": require('./formats/wav'),
-    "AR": require('./formats/ar'),
-    "ELF": require('./formats/elf'),
-    "ZIP": require('./formats/zip'),
-    "SQLITE": require('./formats/sqlite'),
-    "PST": require('./formats/pst'),
-    "PDF": require('./formats/pdf'),
-    "PCX": require('./formats/pcx'),
-    "JPG": require('./formats/jpg'),
-    "EXE": require('./formats/exe'),
+    "BMP": BMP,
+    "GIF": GIF,
+    "PNG": PNG,
+    // "TXT": TXT,
+    "WAVE": WAVE,
+    "AR": AR,
+    "ELF": ELF,
+    "ZIP": ZIP,
+    "SQLITE": SQLITE,
+    "PST": PST,
+    "PDF": PDF,
+    "PCX": PCX,
+    "JPG": JPG,
+    "EXE": EXE,
 };
 
 /**

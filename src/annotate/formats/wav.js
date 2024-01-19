@@ -1,9 +1,9 @@
 export function magic (buffer) {
     const data = new DataView(buffer);
-    
-    if (data.getUint8(0) === 0x52 && 
-        data.getUint8(1) === 0x49 && 
-        data.getUint8(2) === 0x46 && 
+
+    if (data.getUint8(0) === 0x52 &&
+        data.getUint8(1) === 0x49 &&
+        data.getUint8(2) === 0x46 &&
         data.getUint8(3) === 0x46) {
         return template;
     }
@@ -25,7 +25,7 @@ const template = [
         label: "Marker",
         length: 4,
     },
-    { 
+    {
         type: "repeater",
         children: [
             {

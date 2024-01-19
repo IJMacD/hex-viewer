@@ -34,7 +34,7 @@ const template = [
                 label: "Chunk Type",
                 length: 4,
             },
-            { 
+            {
                 type: "switch",
                 value: "chunk_type",
                 cases: {
