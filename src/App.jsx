@@ -12,19 +12,20 @@ import PDF from './preview/PDF';
 import ErrorBoundary from './ErrorBoundary';
 import TXT from './preview/TXT';
 
-export default function App () {
-    const [ buffer, setBuffer ] = useState(/** @type {ArrayBuffer?} */(null));
-    const [ format, setFormat ] = useState(/** @type {string?} */(null));
-    const [ annotations, setAnnotations ] = useState(/** @type {import('./annotate').Annotation[]} */([]));
-    const [ base64, setBase64 ] = useState("");
-    const [ loading, setLoading ] = useState(false);
-    const [ annotationEditMode, setAnnotationEditMode ] = useState(false);
-    const [ template, setTemplate ] = useState(/** @type {import('./annotate').AnnotationTemplate[]?} */(null));
-    const [ offsetText, setOffsetText ] = useState("0");
-    const [ selectedPreview, setSelectedPreview ] = useState("None");
+export default function App() {
+    const [buffer, setBuffer] = useState(/** @type {ArrayBuffer?} */(null));
+    const [format, setFormat] = useState(/** @type {string?} */(null));
+    const [annotations, setAnnotations] = useState(/** @type {import('./annotate').Annotation[]} */([]));
+    const [base64, setBase64] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [annotationEditMode, setAnnotationEditMode] = useState(false);
+    const [template, setTemplate] = useState(/** @type {import('./annotate').AnnotationTemplate[]?} */(null));
+    const [offsetText, setOffsetText] = useState("0");
+    const [selectedPreview, setSelectedPreview] = useState("None");
+    const [annotationError, setAnnotationError] = useState(/** @type {Error?} */(null));
 
     /** @param {import('react').SyntheticEvent<HTMLInputElement>} e */
-    function handleFileChange (e) {
+    function handleFileChange(e) {
         const files = e.currentTarget.files;
 
         if (files && files.length) {
@@ -50,7 +51,7 @@ export default function App () {
         }
     }
 
-    function handleBase64Change (e) {
+    function handleBase64Change(e) {
         const base64 = e.target.value;
         setBase64(base64);
         try {
@@ -61,7 +62,7 @@ export default function App () {
                 view.setUint8(i, decoded.charCodeAt(i));
             }
             setBuffer(buffer);
-        } catch (e) {}
+        } catch (e) { }
     }
 
     // Automatic template matching
@@ -86,12 +87,19 @@ export default function App () {
 
     // Use template to get annotations
     useEffect(() => {
-        if (buffer && template) {
-            const annotations = getAnnotations(template, buffer);
-            setAnnotations(annotations);
+        try {
+            if (buffer && template) {
+                const annotations = getAnnotations(template, buffer);
+                setAnnotations(annotations);
+            }
+            else {
+                setAnnotations([]);
+            }
+            setAnnotationError(null);
         }
-        else {
-            setAnnotations([]);
+        catch (e) {
+            console.log(e);
+            setAnnotationError(e);
         }
 
     }, [buffer, template]);
@@ -101,7 +109,7 @@ export default function App () {
     let preview;
     let wideHexPanel = false;
 
-    const availablePreviews = ["None","TXT","BMP","PCX","JPG","PDF"].filter(f => f === "None" || f === "TXT" || f === format);
+    const availablePreviews = ["None", "TXT", "BMP", "PCX", "JPG", "PDF"].filter(f => f === "None" || f === "TXT" || f === format);
 
     if (buffer) {
         if (selectedPreview === "BMP") {
@@ -128,30 +136,30 @@ export default function App () {
 
     return (
         <div className="App">
-            { !buffer && !loading &&
+            {!buffer && !loading &&
                 <div className="input">
                     <h1>HexViewer</h1>
-                    <label>File Input<br/>
+                    <label>File Input<br />
                         <input type="file" id="file-input" onChange={handleFileChange} />
                     </label>
-                    <label>Base64 Input<br/>
+                    <label>Base64 Input<br />
                         <textarea value={base64} onChange={handleBase64Change} />
                     </label>
                 </div>
             }
-            { buffer &&
-                <div style={{margin: "0 1em"}}>
+            {buffer &&
+                <div style={{ margin: "0 1em" }}>
                     <b>File</b>
-                    <dl style={{display: 'inline-block', marginBlock: 0, fontFamily: "monospace"}}>
-                        <dt style={{display: 'inline', fontWeight: "bold", marginInline: "1em"}}>Size:</dt>
-                        <dd style={{display: 'inline'}}>{buffer.byteLength} bytes</dd>
-                        { format && <>
-                            <dt style={{display: 'inline', fontWeight: "bold", marginInline: "1em"}}>Matched Format:</dt>
-                            <dd style={{display: 'inline'}}>{format}</dd>
+                    <dl style={{ display: 'inline-block', marginBlock: 0, fontFamily: "monospace" }}>
+                        <dt style={{ display: 'inline', fontWeight: "bold", marginInline: "1em" }}>Size:</dt>
+                        <dd style={{ display: 'inline' }}>{buffer.byteLength} bytes</dd>
+                        {format && <>
+                            <dt style={{ display: 'inline', fontWeight: "bold", marginInline: "1em" }}>Matched Format:</dt>
+                            <dd style={{ display: 'inline' }}>{format}</dd>
                         </>
                         }
                     </dl>
-                    <div style={{display: 'inline-block', marginInlineStart: "1em"}}>
+                    <div style={{ display: 'inline-block', marginInlineStart: "1em" }}>
                         <button onClick={() => setBuffer(null)}>Close</button>
                         <button onClick={() => setAnnotationEditMode(m => !m)}>
                             Edit Annotations
@@ -169,9 +177,9 @@ export default function App () {
                 </div>
             }
             <div className="App-panels">
-                { loading && <p>Loading...</p> }
-                { buffer &&
-                    <div className="panel" style={{ padding:"0 1em", flex: wideHexPanel ? "0 0 35em" : "0 0 22em" }}>
+                {loading && <p>Loading...</p>}
+                {buffer &&
+                    <div className="panel" style={{ padding: "0 1em", flex: wideHexPanel ? "0 0 35em" : "0 0 22em" }}>
                         <h1>Hex</h1>
                         <div>
                             <button onClick={() => setOffsetText("0")} disabled={offset == 0}>&lt;&lt;</button>
@@ -182,7 +190,7 @@ export default function App () {
                         </div>
                         <div style={{ display: 'flex' }}>
                             <HexView buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />
-                            { selectedPreview === "None" &&
+                            {selectedPreview === "None" &&
                                 <ErrorBoundary>
                                     <HexTXT buffer={buffer} offset={offset} byteLimit={byteLimit} annotations={annotations} />;
                                 </ErrorBoundary>
@@ -190,21 +198,27 @@ export default function App () {
                         </div>
                     </div>
                 }
-                { annotations && annotations.length > 0 && buffer &&
-                    <div className="panel" style={{padding:"0 1em"}}>
+                {annotations && annotations.length > 0 && buffer &&
+                    <div className="panel" style={{ padding: "0 1em" }}>
                         <h1>Annotations</h1>
-                        <Annotations buffer={buffer} annotations={annotations} setOffset={offset => setOffsetText((Math.floor(offset/16)*16).toString(16))} />
+                        <Annotations buffer={buffer} annotations={annotations} setOffset={offset => setOffsetText((Math.floor(offset / 16) * 16).toString(16))} />
+                    </div>
+                }
+                {annotationError &&
+                    <div className="panel" style={{ padding: "0 1em" }}>
+                        <h1>Annotations</h1>
+                        <p style={{ color: "red" }}>{annotationError.message}</p>
                     </div>
                 }
                 {
                     annotationEditMode && buffer &&
-                    <div className="panel" style={{padding:"0 1em"}}>
+                    <div className="panel" style={{ padding: "0 1em" }}>
                         <h1>Template Editor</h1>
                         <AnnotationEditor template={template} setTemplate={setTemplate} />
                     </div>
                 }
-                { buffer && preview &&
-                    <div className="panel" style={{padding:"0 1em"}}>
+                {buffer && preview &&
+                    <div className="panel" style={{ padding: "0 1em" }}>
                         <ErrorBoundary>
                             {preview}
                         </ErrorBoundary>

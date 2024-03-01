@@ -95,11 +95,11 @@ export function findFormatTemplate(buffer) {
  * @prop {AnnotationTemplate[]} [else]
  */
 
- /**
-  * @param {AnnotationTemplate[]} template
-  * @param {ArrayBuffer} buffer
-  */
-export function getAnnotations (template, buffer) {
+/**
+ * @param {AnnotationTemplate[]} template
+ * @param {ArrayBuffer} buffer
+ */
+export function getAnnotations(template, buffer) {
     /** @type {Annotation[]} */
     let annotations = processAnnotationTemplates(template, buffer);
 
@@ -164,7 +164,7 @@ function processUnresolved(annotations, buffer) {
  * @param {number} [groupOffset]
  * @param {number} [depth]
  */
-function processAnnotationTemplates(templates, buffer, annotations = [], groupOffset=0, depth=0) {
+function processAnnotationTemplates(templates, buffer, annotations = [], groupOffset = 0, depth = 0) {
     const outAnnotations = [];
 
     /** Running position within group */
@@ -188,7 +188,7 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
 
         // Absolute start
         try {
-            annotation.start = (template.start ? +resolveReference(template.start, [...annotations,...outAnnotations], buffer, annotation) : relativeStart + groupOffset);
+            annotation.start = (template.start ? +resolveReference(template.start, [...annotations, ...outAnnotations], buffer, annotation) : relativeStart + groupOffset);
             if (!template.length && (template.type === "ASCII" || template.type === "UTF-8")) {
                 // Find NULL terminator
                 const view = new DataView(buffer, annotation.start);
@@ -200,11 +200,11 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
                 // Find NULL terminator
                 const view = new DataView(buffer, annotation.start);
                 let length;
-                for (length = 0; length < view.byteLength && view.getUint16(length) !== 0; length+=2) { }
+                for (length = 0; length < view.byteLength && view.getUint16(length) !== 0; length += 2) { }
                 annotation.length = length + 2;
             }
             else {
-                annotation.length = +evaluateExpression(getAnnotationLength(template), [...annotations,...outAnnotations], buffer, annotation);
+                annotation.length = +evaluateExpression(getAnnotationLength(template), [...annotations, ...outAnnotations], buffer, annotation);
             }
         }
         catch (e) {
@@ -214,7 +214,7 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
         }
 
         if (typeof template.littleEndian === "string") {
-            annotation.littleEndian = Boolean(evaluateExpression(template.littleEndian, [...annotations,...outAnnotations], buffer, annotation));
+            annotation.littleEndian = Boolean(evaluateExpression(template.littleEndian, [...annotations, ...outAnnotations], buffer, annotation));
         }
 
         if (template.type === "repeater") {
@@ -261,7 +261,7 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
                 const newAnnotations = processAnnotationTemplates(template.children, buffer, [...annotations, ...outAnnotations], start, depth + 1);
                 outAnnotations.push(...newAnnotations);
                 // Marker for visual hint
-                outAnnotations.push({type:"marker"})
+                outAnnotations.push({ type: "marker" })
 
                 absoluteEnd = getLastEnd(newAnnotations);
 
@@ -311,7 +311,7 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
 
             annotation.color = getAnnotationColor(template);
             outAnnotations.push(annotation);
-            const newAnnotations = processAnnotationTemplates(template.children, buffer, [...annotations,...outAnnotations], absoluteStart, depth + 1);
+            const newAnnotations = processAnnotationTemplates(template.children, buffer, [...annotations, ...outAnnotations], absoluteStart, depth + 1);
             outAnnotations.push(...newAnnotations);
 
             absoluteEnd = getLastEnd(newAnnotations);
@@ -358,8 +358,12 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
             }
 
             const last = outAnnotations[outAnnotations.length - 1];
-            // Set for next loop
-            relativeStart = last.start + last.length - groupOffset;
+
+            if (last) {
+                // Set for next loop
+                relativeStart = last.start + last.length - groupOffset;
+            }
+
         } else if (template.type === "if") {
             let isTrue = null;
 
@@ -400,7 +404,7 @@ function processAnnotationTemplates(templates, buffer, annotations = [], groupOf
 /**
  * @param {{ start: number|undefined, length: number|undefined }[]} annotations
  */
-function getLastEnd (annotations) {
+function getLastEnd(annotations) {
     return Math.max(...annotations.map(a => {
         if (typeof a.start === "number" && typeof a.length === "number") {
             return a.start + a.length;
